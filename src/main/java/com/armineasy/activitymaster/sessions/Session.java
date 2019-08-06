@@ -1,39 +1,44 @@
 package com.armineasy.activitymaster.sessions;
 
+import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
+import com.armineasy.activitymaster.activitymaster.services.dto.IInvolvedParty;
+import com.armineasy.activitymaster.activitymaster.services.system.IEnterpriseService;
 import com.armineasy.activitymaster.sessions.services.ISession;
+import com.armineasy.activitymaster.sessions.services.ISessionMasterService;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.servlet.SessionScoped;
+import com.google.inject.servlet.RequestScoped;
 import com.jwebmp.logger.LogFactory;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
 import java.util.logging.Level;
 
 import static com.jwebmp.guicedinjection.GuiceContext.*;
+import static com.jwebmp.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@SessionScoped
+@RequestScoped
 public class Session
 		implements ISession<Session>
 {
 	@JsonValue
-	private final Map<String, Object> values = new LinkedHashMap<>();
+	private final Map<String, String> values = new LinkedHashMap<>();
 
-	private UUID uuid;
+	private IInvolvedParty<?> involvedParty;
+	private IEnterpriseName<?> enterpriseName;
 
 	@Override
 	public String toString()
 	{
 		try
 		{
-			return get(ObjectMapper.class)
+			return get(DefaultObjectMapper)
 					       .writeValueAsString(this);
 		}
 		catch (JsonProcessingException e)
@@ -45,53 +50,72 @@ public class Session
 	}
 
 	@Override
-	public Session addValue(String key, Object object)
+	public ISession<?> addValue(String key, Object object)
 	{
-		values.put(key, object);
+		try
+		{
+			values.put(key, get(DefaultObjectMapper).writeValueAsString(object));
+			ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
+			sessionMasterService.updateSession(this, SessionMasterSystem.getSystemTokens()
+			                                                            .get(get(IEnterpriseService.class).getEnterprise(getEnterpriseName())));
+		}
+		catch (JsonProcessingException e)
+		{
+			LogFactory.getLog("SessionSaved")
+			          .log(Level.SEVERE, "Unable to serialize the given object for persistence", e);
+		}
 		return this;
 	}
 
 	@Override
-	public Session removeValue(String key)
+	public boolean hasValue(String key)
+	{
+		return values.containsKey(key);
+	}
+
+	@Override
+	public ISession<?> removeValue(String key)
 	{
 		values.remove(key);
 		return this;
 	}
 
-	public <T> T as(String key, Class<T> type)
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T as(String key, Class<T> type) throws IOException
 	{
-		return (T) values.get(key);
+		String value = values.get(key);
+		return get(DefaultObjectMapper).readValue(value, type);
 	}
 
-	public UUID getUuid()
+	@Override
+	public ISession<?> setInvolvedParty(IInvolvedParty<?> involvedParty)
 	{
-		return uuid;
-	}
-
-	public Session setUuid(UUID uuid)
-	{
-		this.uuid = uuid;
+		this.involvedParty = involvedParty;
 		return this;
 	}
 
 	@Override
-	public boolean equals(Object o)
+	public IInvolvedParty<?> getInvolvedParty()
 	{
-		if (this == o)
-		{
-			return true;
-		}
-		if (o == null || getClass() != o.getClass())
-		{
-			return false;
-		}
-		Session session = (Session) o;
-		return Objects.equals(uuid, session.uuid);
+		return involvedParty;
 	}
 
 	@Override
-	public int hashCode()
+	public IEnterpriseName<?> getEnterpriseName()
 	{
-		return Objects.hash(uuid);
+		return enterpriseName;
+	}
+
+	@Override
+	public Session setEnterpriseName(IEnterpriseName<?> enterpriseName)
+	{
+		this.enterpriseName = enterpriseName;
+		return this;
+	}
+
+	public Map<String, String> getValues()
+	{
+		return values;
 	}
 }

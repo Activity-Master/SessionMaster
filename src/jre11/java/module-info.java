@@ -1,11 +1,8 @@
 module com.armineasy.activitymaster.sessions {
 
 	exports com.armineasy.activitymaster.sessions.services;
+	exports com.armineasy.activitymaster.sessions.services.classifications;
 
-
-	requires com.armineasy.activitymaster.profiles;
-
-	requires lombok;
 	requires org.mapstruct;
 	requires net.sf.uadetector.core;
 	requires org.json;
@@ -26,10 +23,13 @@ module com.armineasy.activitymaster.sessions {
 	requires javax.servlet.api;
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
+	requires com.fasterxml.jackson.core;
 
 
 	provides com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem with com.armineasy.activitymaster.sessions.SessionMasterSystem;
 	provides com.jwebmp.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.sessions.implementations.SessionMasterBinder;
 
-
+	opens com.armineasy.activitymaster.sessions to com.google.guice,com.fasterxml.jackson.databind;
+	opens com.armineasy.activitymaster.sessions.implementations to com.google.guice;
+	opens com.armineasy.activitymaster.sessions.services to com.google.guice;
 }

@@ -53,7 +53,9 @@ public class SessionMasterSystem
 	{
 		IClassificationService<?> classificationService = get(IClassificationService.class);
 
-		classificationService.create(SessionClassifications, newSystem.get(enterprise));
+		classificationService.create(SessionLastUpdateTime, newSystem.get(enterprise));
+
+
 		classificationService.create(SessionObject, newSystem.get(enterprise));
 	}
 

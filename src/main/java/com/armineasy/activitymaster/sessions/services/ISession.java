@@ -1,6 +1,15 @@
 package com.armineasy.activitymaster.sessions.services;
 
+
+import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
+import com.armineasy.activitymaster.activitymaster.services.dto.IInvolvedParty;
+import com.armineasy.activitymaster.sessions.Session;
+
+import java.io.IOException;
+import java.io.Serializable;
+
 public interface ISession<J extends ISession<J>>
+	extends Serializable
 {
 
 	/**
@@ -15,6 +24,8 @@ public interface ISession<J extends ISession<J>>
 	 */
 	ISession<?> addValue(String key, Object object);
 
+	boolean hasValue(String key);
+
 	/**
 	 * Removes a value from the session properties
 	 *
@@ -24,4 +35,15 @@ public interface ISession<J extends ISession<J>>
 	 * @return The session
 	 */
 	ISession<?> removeValue(String key);
+
+	@SuppressWarnings("unchecked")
+	<T> T as(String key, Class<T> type) throws IOException;
+
+	ISession<?> setInvolvedParty(IInvolvedParty<?> involvedParty);
+
+	IInvolvedParty<?> getInvolvedParty();
+
+	IEnterpriseName<?> getEnterpriseName();
+
+	Session setEnterpriseName(IEnterpriseName<?> enterpriseName);
 }

@@ -1,6 +1,7 @@
 package com.armineasy.activitymaster.sessions.services.classifications;
 
 import com.armineasy.activitymaster.activitymaster.services.classifications.involvedparty.IInvolvedPartyClassification;
+import com.armineasy.activitymaster.activitymaster.services.classifications.resourceitems.IResourceItemClassification;
 import com.armineasy.activitymaster.activitymaster.services.enumtypes.IClassificationDataConceptValue;
 import com.armineasy.activitymaster.activitymaster.services.enumtypes.IClassificationValue;
 
@@ -8,10 +9,10 @@ import static com.armineasy.activitymaster.activitymaster.services.concepts.Ente
 
 public enum SessionClassifications
 		implements IClassificationValue<SessionClassifications>
-				           , IInvolvedPartyClassification<SessionClassifications>
+				           , IInvolvedPartyClassification<SessionClassifications>,
+				           IResourceItemClassification<SessionClassifications>
 {
-	SessionClassifications("The last time the Involved Party was logged in", InvolvedPartyXResourceItem),
-
+	SessionLastUpdateTime("The last time the Involved Party was logged in", InvolvedPartyXResourceItem),
 	SessionObject("The object representing the session data information", InvolvedPartyXResourceItem),
 	;
 

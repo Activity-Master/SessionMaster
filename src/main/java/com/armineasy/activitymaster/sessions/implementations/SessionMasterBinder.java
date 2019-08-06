@@ -5,7 +5,7 @@ import com.armineasy.activitymaster.sessions.SessionMasterService;
 import com.armineasy.activitymaster.sessions.services.ISession;
 import com.armineasy.activitymaster.sessions.services.ISessionMasterService;
 import com.google.inject.PrivateModule;
-import com.google.inject.servlet.SessionScoped;
+import com.google.inject.servlet.RequestScoped;
 import com.jwebmp.guicedinjection.interfaces.IGuiceModule;
 
 public class SessionMasterBinder
@@ -16,10 +16,12 @@ public class SessionMasterBinder
 	@Override
 	protected void configure()
 	{
-		bind(ISessionMasterService.class).to(SessionMasterService.class);
+		bind(ISessionMasterService.class)
+				.to(SessionMasterService.class);
+		expose(ISessionMasterService.class);
 
 		bind(ISession.class).to(Session.class)
-		                    .in(SessionScoped.class);
+		                    .in(RequestScoped.class);
 		expose(ISession.class);
 	}
 
