@@ -6,7 +6,7 @@ module com.armineasy.activitymaster.sessions {
 	requires org.mapstruct;
 	requires net.sf.uadetector.core;
 	requires org.json;
-	requires com.jwebmp.guicedpersistence;
+	requires com.guicedee.guicedpersistence;
 	requires com.jwebmp.guicedservlets;
 
 	requires cache.annotations.ri.common;
@@ -18,7 +18,7 @@ module com.armineasy.activitymaster.sessions {
 	requires com.armineasy.activitymaster.activitymaster;
 	requires com.google.guice;
 
-	requires com.jwebmp.guicedinjection;
+	requires com.guicedee.guicedinjection;
 	requires com.google.common;
 	requires javax.servlet.api;
 	requires com.fasterxml.jackson.annotation;
@@ -27,7 +27,7 @@ module com.armineasy.activitymaster.sessions {
 
 
 	provides com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem with com.armineasy.activitymaster.sessions.SessionMasterSystem;
-	provides com.jwebmp.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.sessions.implementations.SessionMasterBinder;
+	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.sessions.implementations.SessionMasterBinder;
 
 	opens com.armineasy.activitymaster.sessions to com.google.guice,com.fasterxml.jackson.databind;
 	opens com.armineasy.activitymaster.sessions.implementations to com.google.guice;

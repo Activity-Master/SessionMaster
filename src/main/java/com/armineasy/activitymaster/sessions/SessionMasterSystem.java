@@ -7,8 +7,8 @@ import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
 import com.armineasy.activitymaster.activitymaster.services.system.IClassificationService;
 import com.armineasy.activitymaster.activitymaster.services.system.ISystemsService;
 import com.google.inject.Singleton;
-import com.jwebmp.guicedinjection.interfaces.JobService;
-import com.jwebmp.logger.LogFactory;
+import com.guicedee.guicedinjection.interfaces.JobService;
+import com.guicedee.logger.LogFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.armineasy.activitymaster.sessions.services.classifications.SessionClassifications.*;
-import static com.jwebmp.guicedinjection.GuiceContext.*;
+import static com.guicedee.guicedinjection.GuiceContext.*;
 
 @Singleton
 public class SessionMasterSystem

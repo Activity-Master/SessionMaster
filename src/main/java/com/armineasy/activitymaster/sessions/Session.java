@@ -11,15 +11,15 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.servlet.RequestScoped;
-import com.jwebmp.logger.LogFactory;
+import com.guicedee.logger.LogFactory;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
-import static com.jwebmp.guicedinjection.GuiceContext.*;
-import static com.jwebmp.guicedinjection.interfaces.ObjectBinderKeys.*;
+import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.inject.Singleton;
-import com.jwebmp.logger.LogFactory;
+import com.guicedee.logger.LogFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -19,8 +19,8 @@ import java.util.logging.Level;
 
 import static com.armineasy.activitymaster.activitymaster.services.classifications.resourceitems.ResourceItemTypes.*;
 import static com.armineasy.activitymaster.sessions.services.classifications.SessionClassifications.*;
-import static com.jwebmp.guicedinjection.GuiceContext.*;
-import static com.jwebmp.guicedinjection.interfaces.ObjectBinderKeys.*;
+import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @Singleton
 public class SessionMasterService

@@ -6,7 +6,7 @@ import com.armineasy.activitymaster.sessions.services.ISession;
 import com.armineasy.activitymaster.sessions.services.ISessionMasterService;
 import com.google.inject.PrivateModule;
 import com.google.inject.servlet.RequestScoped;
-import com.jwebmp.guicedinjection.interfaces.IGuiceModule;
+import com.guicedee.guicedinjection.interfaces.IGuiceModule;
 
 public class SessionMasterBinder
 		extends PrivateModule
