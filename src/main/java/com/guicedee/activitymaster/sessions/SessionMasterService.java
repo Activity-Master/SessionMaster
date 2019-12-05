@@ -1,15 +1,16 @@
-package com.armineasy.activitymaster.sessions;
+package com.guicedee.activitymaster.sessions;
 
-import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
-import com.armineasy.activitymaster.activitymaster.services.dto.*;
-import com.armineasy.activitymaster.activitymaster.services.security.Passwords;
-import com.armineasy.activitymaster.activitymaster.services.system.IEnterpriseService;
-import com.armineasy.activitymaster.sessions.services.ISession;
-import com.armineasy.activitymaster.sessions.services.ISessionMasterService;
+import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
+import com.guicedee.activitymaster.core.services.dto.*;
+import com.guicedee.activitymaster.core.services.security.Passwords;
+import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
+import com.guicedee.activitymaster.sessions.services.ISession;
+import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.inject.Singleton;
+import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.logger.LogFactory;
 
 import java.io.IOException;
@@ -17,8 +18,7 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.logging.Level;
 
-import static com.armineasy.activitymaster.activitymaster.services.classifications.resourceitems.ResourceItemTypes.*;
-import static com.armineasy.activitymaster.sessions.services.classifications.SessionClassifications.*;
+import static com.guicedee.activitymaster.core.services.classifications.resourceitems.ResourceItemTypes.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
@@ -41,7 +41,7 @@ public class SessionMasterService
 		{
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
 			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
-			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = involvedParty.addOrReuse(SessionObject,
+			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = involvedParty.addOrReuse(SessionClassifications.SessionObject,
 			                                                                                                    Documents,
 			                                                                                                    null,
 			                                                                                                    null,
@@ -82,7 +82,7 @@ public class SessionMasterService
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
 			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
 			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = session.getInvolvedParty()
-			                                                                                  .addOrUpdate(SessionObject,
+			                                                                                  .addOrUpdate(SessionClassifications.SessionObject,
 			                                                                                               Documents,
 			                                                                                               null,
 			                                                                                               null,

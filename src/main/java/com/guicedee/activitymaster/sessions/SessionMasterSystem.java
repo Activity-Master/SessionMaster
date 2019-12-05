@@ -1,12 +1,13 @@
-package com.armineasy.activitymaster.sessions;
+package com.guicedee.activitymaster.sessions;
 
-import com.armineasy.activitymaster.activitymaster.services.IActivityMasterProgressMonitor;
-import com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem;
-import com.armineasy.activitymaster.activitymaster.services.dto.IEnterprise;
-import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
-import com.armineasy.activitymaster.activitymaster.services.system.IClassificationService;
-import com.armineasy.activitymaster.activitymaster.services.system.ISystemsService;
+import com.guicedee.activitymaster.core.services.IActivityMasterProgressMonitor;
+import com.guicedee.activitymaster.core.services.IActivityMasterSystem;
+import com.guicedee.activitymaster.core.services.dto.IEnterprise;
+import com.guicedee.activitymaster.core.services.dto.ISystems;
+import com.guicedee.activitymaster.core.services.system.IClassificationService;
+import com.guicedee.activitymaster.core.services.system.ISystemsService;
 import com.google.inject.Singleton;
+import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.guicedinjection.interfaces.JobService;
 import com.guicedee.logger.LogFactory;
 
@@ -15,7 +16,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.armineasy.activitymaster.sessions.services.classifications.SessionClassifications.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 
 @Singleton
@@ -53,10 +53,10 @@ public class SessionMasterSystem
 	{
 		IClassificationService<?> classificationService = get(IClassificationService.class);
 
-		classificationService.create(SessionLastUpdateTime, newSystem.get(enterprise));
+		classificationService.create(SessionClassifications.SessionLastUpdateTime, newSystem.get(enterprise));
 
 
-		classificationService.create(SessionObject, newSystem.get(enterprise));
+		classificationService.create(SessionClassifications.SessionObject, newSystem.get(enterprise));
 	}
 
 	@Override

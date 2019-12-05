@@ -1,15 +1,14 @@
-package com.armineasy.activitymaster.sessions;
+package com.guicedee.activitymaster.sessions;
 
-import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
-import com.armineasy.activitymaster.activitymaster.services.dto.IInvolvedParty;
-import com.armineasy.activitymaster.activitymaster.services.system.IEnterpriseService;
-import com.armineasy.activitymaster.sessions.services.ISession;
-import com.armineasy.activitymaster.sessions.services.ISessionMasterService;
+import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
+import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
+import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
+import com.guicedee.activitymaster.sessions.services.ISession;
+import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.servlet.RequestScoped;
 import com.guicedee.logger.LogFactory;
 

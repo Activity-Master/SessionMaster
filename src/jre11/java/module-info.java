@@ -1,13 +1,15 @@
-module com.armineasy.activitymaster.sessions {
+import com.guicedee.activitymaster.sessions.SessionMasterSystem;
+import com.guicedee.activitymaster.sessions.implementations.SessionMasterBinder;
 
-	exports com.armineasy.activitymaster.sessions.services;
-	exports com.armineasy.activitymaster.sessions.services.classifications;
+module com.guicedee.activitymaster.sessions {
 
-	requires org.mapstruct;
+	exports com.guicedee.activitymaster.sessions.services;
+	exports com.guicedee.activitymaster.sessions.services.classifications;
+
 	requires net.sf.uadetector.core;
 	requires org.json;
 	requires com.guicedee.guicedpersistence;
-	requires com.jwebmp.guicedservlets;
+	requires com.guicedee.guicedservlets;
 
 	requires cache.annotations.ri.common;
 	requires cache.annotations.ri.guice;
@@ -15,7 +17,7 @@ module com.armineasy.activitymaster.sessions {
 
 	requires java.sql;
 
-	requires com.armineasy.activitymaster.activitymaster;
+	requires com.guicedee.activitymaster.core;
 	requires com.google.guice;
 
 	requires com.guicedee.guicedinjection;
@@ -26,10 +28,10 @@ module com.armineasy.activitymaster.sessions {
 	requires com.fasterxml.jackson.core;
 
 
-	provides com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem with com.armineasy.activitymaster.sessions.SessionMasterSystem;
-	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.sessions.implementations.SessionMasterBinder;
+	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with SessionMasterSystem;
+	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;
 
-	opens com.armineasy.activitymaster.sessions to com.google.guice,com.fasterxml.jackson.databind;
-	opens com.armineasy.activitymaster.sessions.implementations to com.google.guice;
-	opens com.armineasy.activitymaster.sessions.services to com.google.guice;
+	opens com.guicedee.activitymaster.sessions to com.google.guice,com.fasterxml.jackson.databind;
+	opens com.guicedee.activitymaster.sessions.implementations to com.google.guice;
+	opens com.guicedee.activitymaster.sessions.services to com.google.guice;
 }

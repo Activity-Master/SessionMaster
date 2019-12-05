@@ -1,9 +1,9 @@
-package com.armineasy.activitymaster.sessions.implementations;
+package com.guicedee.activitymaster.sessions.implementations;
 
-import com.armineasy.activitymaster.sessions.Session;
-import com.armineasy.activitymaster.sessions.SessionMasterService;
-import com.armineasy.activitymaster.sessions.services.ISession;
-import com.armineasy.activitymaster.sessions.services.ISessionMasterService;
+import com.guicedee.activitymaster.sessions.Session;
+import com.guicedee.activitymaster.sessions.SessionMasterService;
+import com.guicedee.activitymaster.sessions.services.ISession;
+import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.google.inject.PrivateModule;
 import com.google.inject.servlet.RequestScoped;
 import com.guicedee.guicedinjection.interfaces.IGuiceModule;

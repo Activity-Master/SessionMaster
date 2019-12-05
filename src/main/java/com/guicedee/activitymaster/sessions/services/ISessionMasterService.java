@@ -1,8 +1,7 @@
-package com.armineasy.activitymaster.sessions.services;
+package com.guicedee.activitymaster.sessions.services;
 
-import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
-import com.armineasy.activitymaster.activitymaster.services.dto.IInvolvedParty;
-import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
+import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
+import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 
 import java.util.UUID;
 

@@ -12,22 +12,37 @@
     <packaging>jar</packaging>
     <name>Session Master</name>
 
-    <build>
-    </build>
-
-
-
     <dependencies>
-        <dependency>
+
+    <!--    <dependency>
             <groupId>jakarta.mail</groupId>
             <artifactId>jakarta.mail-api</artifactId>
             <version>1.6.4</version>
         </dependency>
 
+
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>imap</artifactId>
             <version>1.6.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>jakarta.activation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>jakarta.activation</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+-->
+
+        <dependency>
+            <groupId>com.guicedee.services</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
         </dependency>
 
 
@@ -63,7 +78,6 @@
             <type>jar</type>
             <scope>test</scope>
         </dependency>
-
 
     </dependencies>
 </project>

@@ -1,11 +1,11 @@
-package com.armineasy.activitymaster.sessions.services.classifications;
+package com.guicedee.activitymaster.sessions.services.classifications;
 
-import com.armineasy.activitymaster.activitymaster.services.classifications.involvedparty.IInvolvedPartyClassification;
-import com.armineasy.activitymaster.activitymaster.services.classifications.resourceitems.IResourceItemClassification;
-import com.armineasy.activitymaster.activitymaster.services.enumtypes.IClassificationDataConceptValue;
-import com.armineasy.activitymaster.activitymaster.services.enumtypes.IClassificationValue;
+import com.guicedee.activitymaster.core.services.classifications.involvedparty.IInvolvedPartyClassification;
+import com.guicedee.activitymaster.core.services.classifications.resourceitems.IResourceItemClassification;
+import com.guicedee.activitymaster.core.services.enumtypes.IClassificationDataConceptValue;
+import com.guicedee.activitymaster.core.services.enumtypes.IClassificationValue;
 
-import static com.armineasy.activitymaster.activitymaster.services.concepts.EnterpriseClassificationDataConcepts.*;
+import static com.guicedee.activitymaster.core.services.concepts.EnterpriseClassificationDataConcepts.*;
 
 public enum SessionClassifications
 		implements IClassificationValue<SessionClassifications>
