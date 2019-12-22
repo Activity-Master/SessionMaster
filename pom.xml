@@ -41,7 +41,7 @@
         <dependency>
             <groupId>com.guicedee.services</groupId>
             <artifactId>jakarta.mail</artifactId>
-            <version>${project.version}</version>
+            <version>${guicedee.version}</version>
             <type>jar</type>
         </dependency>
 
@@ -55,26 +55,26 @@
         <dependency>
             <groupId>com.guicedee.persistence</groupId>
             <artifactId>guiced-persistence-btm</artifactId>
-            <version>${project.version}</version>
+            <version>${guicedee.version}</version>
         </dependency>
 
 
         <dependency>
             <groupId>com.guicedee.services</groupId>
             <artifactId>uadetector-core</artifactId>
-            <version>${project.version}</version>
+            <version>${guicedee.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.guicedee.servlets</groupId>
             <artifactId>guiced-servlets</artifactId>
-            <version>${project.version}</version>
+            <version>${guicedee.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.guicedee.services</groupId>
             <artifactId>uadetector-resources</artifactId>
-            <version>${project.version}</version>
+            <version>${guicedee.version}</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>
