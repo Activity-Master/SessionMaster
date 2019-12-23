@@ -37,7 +37,7 @@ public interface ISession<J extends ISession<J>>
 	ISession<?> removeValue(String key);
 
 	@SuppressWarnings("unchecked")
-	<T> T as(String key, Class<T> type) throws IOException;
+	<T> T as(String key, Class<T> type);
 
 	ISession<?> setInvolvedParty(IInvolvedParty<?> involvedParty);
 

@@ -26,7 +26,7 @@ module com.guicedee.activitymaster.sessions {
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.core;
-
+	requires com.jwebmp.core;
 
 	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;

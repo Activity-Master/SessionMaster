@@ -20,7 +20,7 @@ public class SessionMasterBinder
 				.to(SessionMasterService.class);
 		expose(ISessionMasterService.class);
 
-		bind(ISession.class).to(Session.class)
+		bind(ISession.class).toProvider(SessionProvider.class)
 		                    .in(RequestScoped.class);
 		expose(ISession.class);
 	}

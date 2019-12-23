@@ -4,6 +4,7 @@ import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnt
 import com.guicedee.activitymaster.core.services.dto.*;
 import com.guicedee.activitymaster.core.services.security.Passwords;
 import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
+import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,8 +12,11 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.inject.Singleton;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
+import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
 
+import javax.cache.annotation.CacheKey;
+import javax.cache.annotation.CacheResult;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -31,12 +35,20 @@ public class SessionMasterService
 	private final MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, String.class);
 
 	@Override
-	public ISession<?> getSession(IInvolvedParty<?> involvedParty, IEnterpriseName<?> enterpriseName, UUID... identityToken)
+	@CacheResult(cacheName = "SessionCache")
+	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, IEnterpriseName<?> enterpriseName, UUID... identityToken)
+	{
+		return getSession(involvedParty, new Session(), enterpriseName, identityToken);
+	}
+
+	@Override
+	@CacheResult(cacheName = "SessionCache")
+	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, IEnterpriseName<?> enterpriseName, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(enterpriseName);
 		ISystems<?> sessionSystem = SessionMasterSystem.getNewSystem()
 		                                               .get(enterprise);
-		ISession<?> session = get(ISession.class);
+		ISession<?> session = original;
 		try
 		{
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
@@ -72,7 +84,9 @@ public class SessionMasterService
 	}
 
 	@Override
-	public ISession<?> updateSession(ISession<?> session, UUID... identityToken)
+	@CacheResult(cacheName = "SessionCache",
+			skipGet = true)
+	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(session.getEnterpriseName());
 		ISystems<?> sessionSystem = SessionMasterSystem.getNewSystem()

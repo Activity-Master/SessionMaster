@@ -3,6 +3,7 @@ package com.guicedee.activitymaster.sessions.services;
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 
+import javax.cache.annotation.CacheKey;
 import java.util.UUID;
 
 public interface ISessionMasterService<J extends ISessionMasterService<J>>
@@ -17,7 +18,9 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 	 *
 	 * @return An ISession that is scoped
 	 */
-	public ISession<?> getSession(IInvolvedParty<?> involvedParty, IEnterpriseName<?> enterpriseName, UUID... identityToken);
+	ISession<?> getSession(IInvolvedParty<?> involvedParty, IEnterpriseName<?> enterpriseName, UUID... identityToken);
+
+	ISession<?> getSession(IInvolvedParty<?> involvedParty, ISession<?> original, IEnterpriseName<?> enterpriseName, UUID... identityToken);
 
 	/**
 	 * Adds or Updates the Session to the given item
@@ -29,5 +32,5 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 	 *
 	 * @return The ISession
 	 */
-	public ISession<?> updateSession(ISession<?> session, UUID... identityToken);
+	ISession<?> updateSession(IInvolvedParty<?> involvedParty, ISession<?> session, UUID... identityToken);
 }

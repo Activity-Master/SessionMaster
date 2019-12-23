@@ -12,10 +12,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.servlet.RequestScoped;
 import com.guicedee.logger.LogFactory;
 
+import javax.cache.annotation.*;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
@@ -26,6 +28,7 @@ import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 public class Session
 		implements ISession<Session>
 {
+	private static final Logger log = LogFactory.getLog("Session");
 	@JsonValue
 	private final Map<String, String> values = new LinkedHashMap<>();
 
@@ -38,12 +41,15 @@ public class Session
 		try
 		{
 			return get(DefaultObjectMapper)
-					       .writeValueAsString(this);
+					       .writerWithDefaultPrettyPrinter()
+					       .writeValueAsString(this)
+					       .replaceAll("\n", "<br/>")
+					       .replaceAll("\t", "&nbsp;")
+					       .replace("\\\"", "\"");
 		}
 		catch (JsonProcessingException e)
 		{
-			LogFactory.getLog("Session")
-			          .log(Level.SEVERE, "Couldn't make Session Output", e);
+			log.log(Level.SEVERE, "Couldn't make Session Output", e);
 			return "Something went very wrong!" + e.getMessage();
 		}
 	}
@@ -53,15 +59,21 @@ public class Session
 	{
 		try
 		{
-			values.put(key, get(DefaultObjectMapper).writeValueAsString(object));
+			if (!(object instanceof String))
+			{
+				values.put(key, get(DefaultObjectMapper).writeValueAsString(object));
+			}
+			else
+			{
+				values.put(key, object.toString());
+			}
 			ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
-			sessionMasterService.updateSession(this, SessionMasterSystem.getSystemTokens()
-			                                                            .get(get(IEnterpriseService.class).getEnterprise(getEnterpriseName())));
+			sessionMasterService.updateSession(involvedParty, this, SessionMasterSystem.getSystemTokens()
+			                                                                           .get(get(IEnterpriseService.class).getEnterprise(getEnterpriseName())));
 		}
 		catch (JsonProcessingException e)
 		{
-			LogFactory.getLog("SessionSaved")
-			          .log(Level.SEVERE, "Unable to serialize the given object for persistence", e);
+			log.log(Level.SEVERE, "Unable to serialize the given object for persistence", e);
 		}
 		return this;
 	}
@@ -73,7 +85,7 @@ public class Session
 	}
 
 	@Override
-	public ISession<?> removeValue(String key)
+	public ISession<?> removeValue(@CacheKey String key)
 	{
 		values.remove(key);
 		return this;
@@ -81,10 +93,18 @@ public class Session
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T as(String key, Class<T> type) throws IOException
+	public <T> T as(@CacheKey String key, Class<T> type)
 	{
 		String value = values.get(key);
-		return get(DefaultObjectMapper).readValue(value, type);
+		try
+		{
+			return get(DefaultObjectMapper).readValue(value, type);
+		}
+		catch (JsonProcessingException e)
+		{
+			log.log(Level.WARNING, "Unable to deserialize session object - ", e);
+			return null;
+		}
 	}
 
 	@Override
