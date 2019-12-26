@@ -4,7 +4,6 @@ import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnt
 import com.guicedee.activitymaster.core.services.dto.*;
 import com.guicedee.activitymaster.core.services.security.Passwords;
 import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
-import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +11,6 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.inject.Singleton;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
-import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
 
 import javax.cache.annotation.CacheKey;
@@ -46,7 +44,7 @@ public class SessionMasterService
 	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, IEnterpriseName<?> enterpriseName, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(enterpriseName);
-		ISystems<?> sessionSystem = SessionMasterSystem.getNewSystem()
+		ISystems<?> sessionSystem = SessionMasterSystem.getSystemsMap()
 		                                               .get(enterprise);
 		ISession<?> session = original;
 		try
@@ -89,7 +87,7 @@ public class SessionMasterService
 	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(session.getEnterpriseName());
-		ISystems<?> sessionSystem = SessionMasterSystem.getNewSystem()
+		ISystems<?> sessionSystem = SessionMasterSystem.getSystemsMap()
 		                                               .get(enterprise);
 		try
 		{

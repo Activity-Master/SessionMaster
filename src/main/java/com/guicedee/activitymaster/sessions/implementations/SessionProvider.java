@@ -15,6 +15,7 @@ import com.jwebmp.core.base.servlets.SessionStorageProperties;
 import com.jwebmp.core.utilities.StaticStrings;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public class SessionProvider
@@ -32,12 +33,24 @@ public class SessionProvider
 				String localKey = localStorage.get(StaticStrings.LOCAL_STORAGE_PARAMETER_KEY);
 				IInvolvedPartyService<?> ipService = GuiceContext.get(IInvolvedPartyService.class);
 				IInvolvedParty<?> ip = ipService.findByIdentificationType("IdentificationTypeWebClientUUID", localKey);
+				IEnterprise<?> ent = ip.getEnterpriseID();
+				if (ent == null)
+				{
+					System.out.println("Here");
+				}
+				IEnterpriseName<?> eName = ent.getIEnterprise();
+				if (eName == null)
+				{
+					System.out.println("Here");
+				}
 				ISessionMasterService<?> sessionMasterService = GuiceContext.get(ISessionMasterService.class);
-				IEnterpriseName<?> eName = ip.getEnterpriseID()
-				                             .getIEnterprise();
-				IEnterprise<?> enterprise = ip.getEnterprise();
-				return sessionMasterService.getSession(ip, eName, SessionMasterSystem.getSystemTokens()
-				                                                                     .get(enterprise));
+				UUID systemToken = SessionMasterSystem.getSystemTokens()
+				                                      .get(ent);
+				if (systemToken == null)
+				{
+					System.out.println("Here");
+				}
+				return sessionMasterService.getSession(ip, eName, systemToken);
 			}
 		}
 		catch (Exception e)

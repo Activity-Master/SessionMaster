@@ -8,6 +8,7 @@ import com.guicedee.activitymaster.core.services.system.IClassificationService;
 import com.guicedee.activitymaster.core.services.system.ISystemsService;
 import com.google.inject.Singleton;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
+import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.interfaces.JobService;
 import com.guicedee.logger.LogFactory;
 
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 
 @Singleton
@@ -23,18 +25,16 @@ public class SessionMasterSystem
 		implements IActivityMasterSystem<SessionMasterSystem>
 {
 	private static final Map<IEnterprise<?>, UUID> systemTokens = new HashMap<>();
-	private static final Map<IEnterprise<?>, ISystems> newSystem = new HashMap<>();
-
-	private UUID uuid;
+	private static final Map<IEnterprise<?>, ISystems<?>> systemsMap = new HashMap<>();
 
 	public static Map<IEnterprise<?>, UUID> getSystemTokens()
 	{
 		return SessionMasterSystem.systemTokens;
 	}
 
-	public static Map<IEnterprise<?>, ISystems> getNewSystem()
+	public static Map<IEnterprise<?>, ISystems<?>> getSystemsMap()
 	{
-		return SessionMasterSystem.newSystem;
+		return SessionMasterSystem.systemsMap;
 	}
 
 	@Override
@@ -49,32 +49,49 @@ public class SessionMasterSystem
 		return 0;
 	}
 
-	private void done(IEnterprise<?> enterprise)
+	private void done(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
 		IClassificationService<?> classificationService = get(IClassificationService.class);
 
-		classificationService.create(SessionClassifications.SessionLastUpdateTime, newSystem.get(enterprise));
-
-
-		classificationService.create(SessionClassifications.SessionObject, newSystem.get(enterprise));
+		try
+		{
+			classificationService.find(SessionLastUpdateTime, enterprise, systemTokens.get(enterprise));
+		}
+		catch (Exception e)
+		{
+			logProgress("Mail Master", "Loading Default Mail Session Classifications", progressMonitor);
+			classificationService.create(SessionLastUpdateTime, systemsMap.get(enterprise));
+			classificationService.create(SessionClassifications.SessionObject, systemsMap.get(enterprise));
+		}
 	}
 
 	@Override
-	public void postUpdate(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
+	public void postStartup(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
-		newSystem.put(enterprise, get(ISystemsService.class)
-				                          .create(enterprise, "Sessions Master",
-				                                  "The system for handling distributed sessions", ""));
-		uuid = get(ISystemsService.class)
-				       .registerNewSystem(enterprise, newSystem.get(enterprise));
+		final String systemName = "Sessions Master";
+		final String systemDesc = "The system for handling distributed sessions";
+		ISystems<?> sys = GuiceContext.get(ISystemsService.class)
+		                              .findSystem(enterprise, systemName);
+		UUID securityToken = null;
+		if (sys == null)
+		{
+			sys = GuiceContext.get(ISystemsService.class)
+			                  .create(enterprise, systemName, systemDesc, systemName);
+			securityToken = GuiceContext.get(ISystemsService.class)
+			                            .registerNewSystem(enterprise, sys);
+		}
+		else
+		{
+			securityToken = GuiceContext.get(ISystemsService.class)
+			                            .getSecurityIdentityToken(sys);
+		}
+		systemTokens.put(enterprise, securityToken);
+		systemsMap.put(enterprise, sys);
+	}
 
-		LogFactory.getLog("SessionMaster")
-		          .warning("Waiting for all systems to generate their security identities");
-		JobService.getInstance()
-		          .waitForJob("SecurityTokenStore", 5L, TimeUnit.MINUTES);
-
-		systemTokens.put(enterprise, uuid);
-
-		done(enterprise);
+	@Override
+	public void loadUpdates(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
+	{
+		done(enterprise, progressMonitor);
 	}
 }

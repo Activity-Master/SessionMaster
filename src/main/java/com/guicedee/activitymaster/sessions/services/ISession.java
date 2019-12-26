@@ -1,6 +1,5 @@
 package com.guicedee.activitymaster.sessions.services;
 
-
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 import com.guicedee.activitymaster.sessions.Session;
@@ -9,9 +8,8 @@ import java.io.IOException;
 import java.io.Serializable;
 
 public interface ISession<J extends ISession<J>>
-	extends Serializable
+		extends Serializable
 {
-
 	/**
 	 * Adds a given value to the session
 	 *

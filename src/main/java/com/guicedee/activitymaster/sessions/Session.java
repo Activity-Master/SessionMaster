@@ -1,5 +1,7 @@
 package com.guicedee.activitymaster.sessions;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
@@ -28,6 +30,8 @@ import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 public class Session
 		implements ISession<Session>
 {
+	private static final long serialVersionUID = 1L;
+
 	private static final Logger log = LogFactory.getLog("Session");
 	@JsonValue
 	private final Map<String, String> values = new LinkedHashMap<>();
@@ -42,6 +46,7 @@ public class Session
 		{
 			return get(DefaultObjectMapper)
 					       .writerWithDefaultPrettyPrinter()
+					       .withoutFeatures(SerializationFeature.FAIL_ON_EMPTY_BEANS)
 					       .writeValueAsString(this)
 					       .replaceAll("\n", "<br/>")
 					       .replaceAll("\t", "&nbsp;")
