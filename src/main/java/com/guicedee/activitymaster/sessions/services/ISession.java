@@ -7,6 +7,7 @@ import com.guicedee.activitymaster.sessions.Session;
 import java.io.IOException;
 import java.io.Serializable;
 
+
 public interface ISession<J extends ISession<J>>
 		extends Serializable
 {

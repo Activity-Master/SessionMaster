@@ -1,21 +1,19 @@
 package com.guicedee.activitymaster.sessions;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.inject.servlet.RequestScoped;
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.inject.servlet.RequestScoped;
 import com.guicedee.logger.LogFactory;
 
-import javax.cache.annotation.*;
-import java.io.IOException;
+import javax.cache.annotation.CacheKey;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -73,8 +71,10 @@ public class Session
 				values.put(key, object.toString());
 			}
 			ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
-			sessionMasterService.updateSession(involvedParty, this, SessionMasterSystem.getSystemTokens()
-			                                                                           .get(get(IEnterpriseService.class).getEnterprise(getEnterpriseName())));
+			sessionMasterService.updateSession(involvedParty, this,
+			                                   get(SessionMasterSystem.class).getSystemToken(
+					                                   get(IEnterpriseService.class).getEnterprise(getEnterpriseName()))
+			                                  );
 		}
 		catch (JsonProcessingException e)
 		{

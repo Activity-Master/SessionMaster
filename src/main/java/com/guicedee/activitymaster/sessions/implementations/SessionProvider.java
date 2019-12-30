@@ -44,8 +44,8 @@ public class SessionProvider
 					System.out.println("Here");
 				}
 				ISessionMasterService<?> sessionMasterService = GuiceContext.get(ISessionMasterService.class);
-				UUID systemToken = SessionMasterSystem.getSystemTokens()
-				                                      .get(ent);
+				UUID systemToken = GuiceContext.get(SessionMasterSystem.class)
+				                               .getSystemToken(ent);
 				if (systemToken == null)
 				{
 					System.out.println("Here");

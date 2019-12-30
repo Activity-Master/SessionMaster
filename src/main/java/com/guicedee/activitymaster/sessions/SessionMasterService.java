@@ -1,15 +1,15 @@
 package com.guicedee.activitymaster.sessions;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.MapType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.google.inject.Singleton;
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.*;
 import com.guicedee.activitymaster.core.services.security.Passwords;
 import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.MapType;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.google.inject.Singleton;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.logger.LogFactory;
 
@@ -44,11 +44,17 @@ public class SessionMasterService
 	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, IEnterpriseName<?> enterpriseName, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(enterpriseName);
-		ISystems<?> sessionSystem = SessionMasterSystem.getSystemsMap()
-		                                               .get(enterprise);
+		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
 		ISession<?> session = original;
 		try
 		{
+			if (session == null || involvedParty == null || session.getInvolvedParty() == null)
+			{
+				LogFactory.getLog("SessionMasterService")
+				          .warning("Session has no involved party. First session call?");
+				return session;
+			}
+
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
 			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
 			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = involvedParty.addOrReuse(SessionClassifications.SessionObject,
@@ -87,8 +93,13 @@ public class SessionMasterService
 	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(session.getEnterpriseName());
-		ISystems<?> sessionSystem = SessionMasterSystem.getSystemsMap()
-		                                               .get(enterprise);
+		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
+		if (session == null || involvedParty == null || session.getInvolvedParty() == null)
+		{
+			LogFactory.getLog("SessionMasterService")
+			          .warning("Session has no involved party. First session call?");
+			return session;
+		}
 		try
 		{
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
