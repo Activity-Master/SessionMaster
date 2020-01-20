@@ -1,11 +1,9 @@
 package com.guicedee.activitymaster.sessions.implementations;
 
-import com.guicedee.activitymaster.sessions.Session;
+import com.google.inject.PrivateModule;
 import com.guicedee.activitymaster.sessions.SessionMasterService;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
-import com.google.inject.PrivateModule;
-import com.google.inject.servlet.RequestScoped;
 import com.guicedee.guicedinjection.interfaces.IGuiceModule;
 
 public class SessionMasterBinder
@@ -20,8 +18,8 @@ public class SessionMasterBinder
 				.to(SessionMasterService.class);
 		expose(ISessionMasterService.class);
 
-		bind(ISession.class).toProvider(SessionProvider.class)
-		                    .in(RequestScoped.class);
+		bind(ISession.class).toProvider(SessionProvider.class);
+
 		expose(ISession.class);
 	}
 

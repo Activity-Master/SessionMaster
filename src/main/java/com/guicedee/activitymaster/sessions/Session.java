@@ -71,7 +71,7 @@ public class Session
 				values.put(key, object.toString());
 			}
 			ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
-			sessionMasterService.updateSession(involvedParty, this,
+			sessionMasterService.updateSession(involvedParty, this, getEnterpriseName(),
 			                                   get(SessionMasterSystem.class).getSystemToken(
 					                                   get(IEnterpriseService.class).getEnterprise(getEnterpriseName()))
 			                                  );
@@ -103,6 +103,10 @@ public class Session
 		String value = values.get(key);
 		try
 		{
+			if (value == null)
+			{
+				return null;
+			}
 			return get(DefaultObjectMapper).readValue(value, type);
 		}
 		catch (JsonProcessingException e)
@@ -116,6 +120,8 @@ public class Session
 	public ISession<?> setInvolvedParty(IInvolvedParty<?> involvedParty)
 	{
 		this.involvedParty = involvedParty;
+		values.put("involved-party", involvedParty.getId()
+		                                          .toString());
 		return this;
 	}
 
@@ -135,6 +141,7 @@ public class Session
 	public Session setEnterpriseName(IEnterpriseName<?> enterpriseName)
 	{
 		this.enterpriseName = enterpriseName;
+		values.put("enterprise", enterpriseName.toString());
 		return this;
 	}
 

@@ -3,7 +3,6 @@ package com.guicedee.activitymaster.sessions.services;
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 
-import javax.cache.annotation.CacheKey;
 import java.util.UUID;
 
 public interface ISessionMasterService<J extends ISessionMasterService<J>>
@@ -32,5 +31,5 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 	 *
 	 * @return The ISession
 	 */
-	ISession<?> updateSession(IInvolvedParty<?> involvedParty, ISession<?> session, UUID... identityToken);
+	ISession<?> updateSession(IInvolvedParty<?> involvedParty, ISession<?> session, IEnterpriseName<?> enterpriseName, UUID... identityToken);
 }

@@ -50,7 +50,8 @@ public class SessionProvider
 				{
 					System.out.println("Here");
 				}
-				return sessionMasterService.getSession(ip, eName, systemToken);
+				ISession<?> session = sessionMasterService.getSession(ip, eName, systemToken);
+				return session;
 			}
 		}
 		catch (Exception e)

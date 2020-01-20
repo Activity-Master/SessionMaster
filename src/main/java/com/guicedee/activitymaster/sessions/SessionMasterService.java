@@ -34,21 +34,21 @@ public class SessionMasterService
 
 	@Override
 	@CacheResult(cacheName = "SessionCache")
-	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, IEnterpriseName<?> enterpriseName, UUID... identityToken)
+	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
 	{
 		return getSession(involvedParty, new Session(), enterpriseName, identityToken);
 	}
 
 	@Override
 	@CacheResult(cacheName = "SessionCache")
-	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, IEnterpriseName<?> enterpriseName, UUID... identityToken)
+	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(enterpriseName);
 		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
 		ISession<?> session = original;
 		try
 		{
-			if (session == null || involvedParty == null || session.getInvolvedParty() == null)
+			if (session == null && involvedParty == null && session.getInvolvedParty() == null)
 			{
 				LogFactory.getLog("SessionMasterService")
 				          .warning("Session has no involved party. First session call?");
@@ -90,7 +90,7 @@ public class SessionMasterService
 	@Override
 	@CacheResult(cacheName = "SessionCache",
 			skipGet = true)
-	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, UUID... identityToken)
+	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(session.getEnterpriseName());
 		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
