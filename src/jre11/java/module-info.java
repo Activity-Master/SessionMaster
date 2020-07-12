@@ -22,7 +22,7 @@ module com.guicedee.activitymaster.sessions {
 
 	requires com.guicedee.guicedinjection;
 	requires com.google.common;
-	requires javax.servlet.api;
+	requires java.servlet;
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.core;
@@ -31,7 +31,7 @@ module com.guicedee.activitymaster.sessions {
 	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;
 
-	opens com.guicedee.activitymaster.sessions to com.google.guice,com.fasterxml.jackson.databind;
+	opens com.guicedee.activitymaster.sessions to com.google.guice, com.fasterxml.jackson.databind;
 	opens com.guicedee.activitymaster.sessions.implementations to com.google.guice;
 	opens com.guicedee.activitymaster.sessions.services to com.google.guice;
 }

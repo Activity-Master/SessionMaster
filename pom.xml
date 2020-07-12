@@ -28,13 +28,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.guicedee.persistence</groupId>
-            <artifactId>guiced-persistence-btm</artifactId>
-            <version>${guicedee.version}</version>
-        </dependency>
-
-
-        <dependency>
             <groupId>com.guicedee.services</groupId>
             <artifactId>uadetector-core</artifactId>
             <version>${guicedee.version}</version>
