@@ -35,7 +35,6 @@ public interface ISession<J extends ISession<J>>
 	 */
 	ISession<?> removeValue(String key);
 
-	@SuppressWarnings("unchecked")
 	<T> T as(String key, Class<T> type);
 
 	ISession<?> setInvolvedParty(IInvolvedParty<?> involvedParty);
@@ -44,5 +43,5 @@ public interface ISession<J extends ISession<J>>
 
 	IEnterpriseName<?> getEnterpriseName();
 
-	Session setEnterpriseName(IEnterpriseName<?> enterpriseName);
+	ISession<?> setEnterpriseName(IEnterpriseName<?> enterpriseName);
 }

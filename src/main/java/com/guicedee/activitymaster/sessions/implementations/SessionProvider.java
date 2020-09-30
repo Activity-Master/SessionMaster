@@ -6,7 +6,6 @@ import com.guicedee.activitymaster.core.services.dto.IEnterprise;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
 import com.guicedee.activitymaster.sessions.Session;
-import com.guicedee.activitymaster.sessions.SessionMasterSystem;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.guicedinjection.GuiceContext;
@@ -15,12 +14,12 @@ import com.jwebmp.core.base.servlets.SessionStorageProperties;
 import com.jwebmp.core.utilities.StaticStrings;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Level;
 
 public class SessionProvider
-		implements Provider<ISession>
+		implements Provider<ISession<?>>
 {
+	
 	@Override
 	public ISession<?> get()
 	{
@@ -33,25 +32,22 @@ public class SessionProvider
 				String localKey = localStorage.get(StaticStrings.LOCAL_STORAGE_PARAMETER_KEY);
 				IInvolvedPartyService<?> ipService = GuiceContext.get(IInvolvedPartyService.class);
 				IInvolvedParty<?> ip = ipService.findByIdentificationType("IdentificationTypeWebClientUUID", localKey);
+				if (ip == null)
+				{
+					return new Session();
+				}
 				IEnterprise<?> ent = ip.getEnterpriseID();
 				if (ent == null)
 				{
-					System.out.println("Here");
+					return new Session();
 				}
 				IEnterpriseName<?> eName = ent.getIEnterprise();
 				if (eName == null)
 				{
-					System.out.println("Here");
+					return new Session();
 				}
 				ISessionMasterService<?> sessionMasterService = GuiceContext.get(ISessionMasterService.class);
-				UUID systemToken = GuiceContext.get(SessionMasterSystem.class)
-				                               .getSystemToken(ent);
-				if (systemToken == null)
-				{
-					System.out.println("Here");
-				}
-				ISession<?> session = sessionMasterService.getSession(ip, eName, systemToken);
-				return session;
+				return sessionMasterService.getSession(ip, eName);
 			}
 		}
 		catch (Exception e)
@@ -61,4 +57,5 @@ public class SessionProvider
 		}
 		return new Session();
 	}
+	
 }

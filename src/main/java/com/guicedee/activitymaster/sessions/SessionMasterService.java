@@ -8,6 +8,8 @@ import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnt
 import com.guicedee.activitymaster.core.services.dto.*;
 import com.guicedee.activitymaster.core.services.security.Passwords;
 import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
+import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
+import com.guicedee.activitymaster.sessions.implementations.AsyncSessionUpdate;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
@@ -31,14 +33,14 @@ public class SessionMasterService
 	private final ObjectMapper mapper = new ObjectMapper();
 	private final TypeFactory typeFactory = mapper.getTypeFactory();
 	private final MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, String.class);
-
+	
 	@Override
 	@CacheResult(cacheName = "SessionCache")
 	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
 	{
 		return getSession(involvedParty, new Session(), enterpriseName, identityToken);
 	}
-
+	
 	@Override
 	@CacheResult(cacheName = "SessionCache")
 	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
@@ -48,31 +50,31 @@ public class SessionMasterService
 		ISession<?> session = original;
 		try
 		{
-			if (session == null && involvedParty == null && session.getInvolvedParty() == null)
+			if (session == null && involvedParty == null)
 			{
 				LogFactory.getLog("SessionMasterService")
 				          .warning("Session has no involved party. First session call?");
 				return session;
 			}
-
+			
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
 			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
-			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = involvedParty.addOrReuse(SessionClassifications.SessionObject,
-			                                                                                                    Documents,
-			                                                                                                    null,
-			                                                                                                    null,
-			                                                                                                    sessionString.getBytes(),
-			                                                                                                    "encrypted/json", sessionSystem, identityToken);
+			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = involvedParty.addOrReuseResourceItem(SessionClassifications.SessionObject,
+			                                                                                                                JsonPacket,
+			                                                                                                                null,
+			                                                                                                                null,
+			                                                                                                                sessionString.getBytes(),
+			                                                                                                                "encrypted/json", sessionSystem, identityToken);
 			byte[] storedSession = sessionObject.getSecondary()
 			                                    .getData();
 			sessionString = new String(new Passwords().integerDecrypt(new String(storedSession)));
-
+			
 			HashMap<String, String> returned = new HashMap<>();
 			if (!(sessionString.isEmpty() || "{}".equals(sessionString)))
 			{
 				returned = get(DefaultObjectMapper).readValue(sessionString, mapType);
 			}
-
+			
 			Session sess = (Session) session;
 			sess.getValues()
 			    .putAll(returned);
@@ -82,43 +84,53 @@ public class SessionMasterService
 			LogFactory.getLog("SessionMasterService")
 			          .log(Level.SEVERE, "Error serializing the inecoming object to retrieve a session", e);
 		}
-		session.setInvolvedParty(involvedParty);
-		session.setEnterpriseName(enterpriseName);
+		if (session != null)
+		{
+			session.setEnterpriseName(enterpriseName);
+			session.setInvolvedParty(involvedParty);
+		}
 		return session;
 	}
-
+	
 	@Override
 	@CacheResult(cacheName = "SessionCache",
-			skipGet = true)
+	             skipGet = true)
 	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(session.getEnterpriseName());
 		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
+		
 		if (session == null || involvedParty == null || session.getInvolvedParty() == null)
 		{
-			LogFactory.getLog("SessionMasterService")
-			          .warning("Session has no involved party. First session call?");
-			return session;
+			if (session.hasValue("involved-party"))
+			{
+				involvedParty = get(IInvolvedPartyService.class).findByID(Long.parseLong(session.as("involved-party", String.class)));
+				session.setInvolvedParty(involvedParty);
+			}
+			else
+			{
+				LogFactory.getLog("SessionMasterService")
+				          .warning("Session has no involved party. First session call?");
+				return session;
+			}
 		}
 		try
 		{
-			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
-			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
-			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = session.getInvolvedParty()
-			                                                                                  .addOrUpdate(SessionClassifications.SessionObject,
-			                                                                                               Documents,
-			                                                                                               null,
-			                                                                                               null,
-			                                                                                               sessionString.getBytes(), "encrypted/json", sessionSystem,
-			                                                                                               identityToken);
-			sessionObject.getSecondary()
-			             .updateData(sessionString.getBytes(), identityToken);
+			AsyncSessionUpdate update = get(AsyncSessionUpdate.class);
+			update.setSession(session)
+			      .setSessionSystem(sessionSystem)
+			      .setIdentityToken(identityToken);
+			update.run();
+		/*	JobService.getInstance()
+			          .addJob("AsyncSessionUpdate", update);*/
 		}
-		catch (IOException e)
+		catch (Throwable e)
 		{
 			LogFactory.getLog("SessionMasterService")
 			          .log(Level.SEVERE, "Error serializing the incoming object to retrieve a session", e);
 		}
 		return session;
 	}
+	
+	
 }

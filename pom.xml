@@ -13,43 +13,21 @@
     <name>Session Master</name>
 
     <dependencies>
-        <dependency>
-            <groupId>com.guicedee.services</groupId>
-            <artifactId>jakarta.mail</artifactId>
-            <version>${guicedee.version}</version>
-            <type>jar</type>
-        </dependency>
-
 
         <dependency>
             <groupId>com.armineasy.activitymaster</groupId>
             <artifactId>activity-master</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.guicedee.services</groupId>
-            <artifactId>uadetector-core</artifactId>
-            <version>${guicedee.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.guicedee.servlets</groupId>
-            <artifactId>guiced-servlets</artifactId>
-            <version>${guicedee.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.guicedee.services</groupId>
-            <artifactId>uadetector-resources</artifactId>
-            <version>${guicedee.version}</version>
-            <type>jar</type>
-            <scope>test</scope>
+            <version>0.0.0_0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>com.jwebmp.core</groupId>
             <artifactId>jwebmp-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jwebmp.plugins.security</groupId>
+            <artifactId>jwebmp-plugins-session-storage-security</artifactId>
         </dependency>
 
     </dependencies>

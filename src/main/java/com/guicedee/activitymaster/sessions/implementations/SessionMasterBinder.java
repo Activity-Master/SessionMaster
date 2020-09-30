@@ -1,6 +1,7 @@
 package com.guicedee.activitymaster.sessions.implementations;
 
 import com.google.inject.PrivateModule;
+import com.google.inject.servlet.RequestScoped;
 import com.guicedee.activitymaster.sessions.SessionMasterService;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
