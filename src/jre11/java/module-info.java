@@ -7,8 +7,7 @@ module com.guicedee.activitymaster.sessions {
 	
 	exports com.guicedee.activitymaster.sessions.services;
 	exports com.guicedee.activitymaster.sessions.services.classifications;
-	
-	requires net.sf.uadetector.core;
+
 	requires org.json;
 	requires com.guicedee.guicedpersistence;
 	requires com.guicedee.guicedservlets;
@@ -19,18 +18,16 @@ module com.guicedee.activitymaster.sessions {
 	
 	requires java.sql;
 	
-	requires com.jwebmp.plugins.security.sessionstorage;
-	
+
 	requires com.guicedee.activitymaster.core;
 	requires com.google.guice;
 	
 	requires com.guicedee.guicedinjection;
 	requires com.google.common;
-	requires java.servlet;
+
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.core;
-	requires com.jwebmp.core;
 	
 	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;

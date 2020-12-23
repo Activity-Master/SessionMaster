@@ -18,10 +18,6 @@ public class SessionMasterBinder
 		bind(ISessionMasterService.class)
 				.to(SessionMasterService.class);
 		expose(ISessionMasterService.class);
-
-		bind(ISession.class).toProvider(SessionProvider.class);
-
-		expose(ISession.class);
 	}
 
 }

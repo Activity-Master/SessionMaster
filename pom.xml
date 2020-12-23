@@ -20,15 +20,5 @@
             <version>0.0.0_0-SNAPSHOT</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.jwebmp.core</groupId>
-            <artifactId>jwebmp-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.jwebmp.plugins.security</groupId>
-            <artifactId>jwebmp-plugins-session-storage-security</artifactId>
-        </dependency>
-
     </dependencies>
 </project>

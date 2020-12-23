@@ -13,9 +13,10 @@ import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.logger.LogFactory;
 
-import javax.cache.annotation.CacheKey;
+import jakarta.cache.annotation.CacheKey;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -162,7 +163,7 @@ public class Session
 		{
 			if (hasValue("involved-party"))
 			{
-				involvedParty = get(IInvolvedPartyService.class).findByID(Long.parseLong(as("involved-party", String.class)));
+				involvedParty = get(IInvolvedPartyService.class).findByID(UUID.fromString(as("involved-party", String.class)));
 			}
 		}
 		return involvedParty;

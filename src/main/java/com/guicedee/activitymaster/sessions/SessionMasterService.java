@@ -15,8 +15,8 @@ import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.logger.LogFactory;
 
-import javax.cache.annotation.CacheKey;
-import javax.cache.annotation.CacheResult;
+import jakarta.cache.annotation.CacheKey;
+import jakarta.cache.annotation.CacheResult;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -104,7 +104,7 @@ public class SessionMasterService
 		{
 			if (session.hasValue("involved-party"))
 			{
-				involvedParty = get(IInvolvedPartyService.class).findByID(Long.parseLong(session.as("involved-party", String.class)));
+				involvedParty = get(IInvolvedPartyService.class).findByID(UUID.fromString(session.as("involved-party", String.class)));
 				session.setInvolvedParty(involvedParty);
 			}
 			else
