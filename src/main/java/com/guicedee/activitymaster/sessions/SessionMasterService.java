@@ -13,6 +13,7 @@ import com.guicedee.activitymaster.sessions.implementations.AsyncSessionUpdate;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
+import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
 
 import jakarta.cache.annotation.CacheKey;
@@ -26,11 +27,10 @@ import static com.guicedee.activitymaster.core.services.classifications.resource
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
-@Singleton
 public class SessionMasterService
 		implements ISessionMasterService<SessionMasterService>
 {
-	private final ObjectMapper mapper = new ObjectMapper();
+	private final ObjectMapper mapper = GuiceContext.get(ObjectMapper.class);
 	private final TypeFactory typeFactory = mapper.getTypeFactory();
 	private final MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, String.class);
 	
