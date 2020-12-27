@@ -1,5 +1,6 @@
 import com.guicedee.activitymaster.sessions.SessionMasterSystem;
 import com.guicedee.activitymaster.sessions.implementations.SessionMasterBinder;
+import com.guicedee.activitymaster.sessions.implementations.SessionsModuleInclusion;
 
 module com.guicedee.activitymaster.sessions {
 	
@@ -31,8 +32,10 @@ module com.guicedee.activitymaster.sessions {
 	
 	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;
+	provides com.guicedee.guicedinjection.interfaces.IGuiceScanModuleInclusions with SessionsModuleInclusion;
 	
 	opens com.guicedee.activitymaster.sessions to com.google.guice, com.fasterxml.jackson.databind;
 	opens com.guicedee.activitymaster.sessions.implementations to com.google.guice;
+	opens com.guicedee.activitymaster.sessions.implementations.updates to com.google.guice;
 	opens com.guicedee.activitymaster.sessions.services to com.google.guice;
 }

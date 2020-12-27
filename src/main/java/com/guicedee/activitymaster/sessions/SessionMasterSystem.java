@@ -22,38 +22,15 @@ public class SessionMasterSystem
 	@Override
 	public void createDefaults(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
-
+	
 	}
 
 	@Override
 	public int totalTasks()
 	{
-		return 2;
+		return 0;
 	}
-
-	@Override
-	public void loadUpdates(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
-	{
-		done(enterprise, progressMonitor);
-	}
-
-	private void done(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
-	{
-		IClassificationService<?> classificationService = get(IClassificationService.class);
-		try
-		{
-			UUID token = getSystemToken(enterprise);
-			classificationService.find(SessionLastUpdateTime, enterprise, token);
-		}
-		catch (Exception e)
-		{
-			logProgress("Session Master", "Loading Default Session Classifications", progressMonitor);
-			ISystems<?> system = getSystem(enterprise);
-			classificationService.create(SessionLastUpdateTime, system);
-			classificationService.create(SessionClassifications.SessionObject, system);
-		}
-	}
-
+	
 	@Override
 	public String getSystemName()
 	{
