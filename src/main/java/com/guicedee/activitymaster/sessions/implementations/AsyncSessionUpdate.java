@@ -44,7 +44,7 @@ public class AsyncSessionUpdate implements Runnable
 		                                                                                                           sessionString.getBytes(), "encrypted/json", sessionSystem,
 		                                                                                                           identityToken);
 		sessionObject.getSecondary()
-		             .updateData(sessionString.getBytes(), identityToken);
+		             .updateData(sessionString.getBytes(),sessionSystem ,identityToken);
 	}
 	
 	@Override
