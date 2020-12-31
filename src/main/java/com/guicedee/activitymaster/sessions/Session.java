@@ -14,6 +14,8 @@ import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.logger.LogFactory;
 
 import jakarta.cache.annotation.CacheKey;
+
+import java.io.Serial;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -28,6 +30,7 @@ import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 public class Session
 		implements ISession<Session>
 {
+	@Serial
 	private static final long serialVersionUID = 1L;
 	
 	private static final Logger log = LogFactory.getLog("Session");
