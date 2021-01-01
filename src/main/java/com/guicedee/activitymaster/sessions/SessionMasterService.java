@@ -3,11 +3,8 @@ package com.guicedee.activitymaster.sessions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.google.inject.Singleton;
-import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.*;
 import com.guicedee.activitymaster.core.services.security.Passwords;
-import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
 import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
 import com.guicedee.activitymaster.sessions.implementations.AsyncSessionUpdate;
 import com.guicedee.activitymaster.sessions.services.ISession;
@@ -15,9 +12,9 @@ import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
-
 import jakarta.cache.annotation.CacheKey;
 import jakarta.cache.annotation.CacheResult;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -36,16 +33,16 @@ public class SessionMasterService
 	
 	@Override
 	@CacheResult(cacheName = "SessionCache")
-	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
+	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, @CacheKey  ISystems<?> system, UUID... identityToken)
 	{
-		return getSession(involvedParty, new Session(), enterpriseName, identityToken);
+		return getSession(involvedParty, new Session(), system, identityToken);
 	}
 	
 	@Override
 	@CacheResult(cacheName = "SessionCache")
-	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
+	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, @CacheKey  ISystems<?> system, UUID... identityToken)
 	{
-		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(enterpriseName);
+		IEnterprise<?> enterprise = system.getEnterprise();
 		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
 		ISession<?> session = original;
 		try
@@ -86,7 +83,7 @@ public class SessionMasterService
 		}
 		if (session != null)
 		{
-			session.setEnterpriseName(enterpriseName);
+			session.setSystem(system);
 			session.setInvolvedParty(involvedParty);
 		}
 		return session;
@@ -95,9 +92,9 @@ public class SessionMasterService
 	@Override
 	@CacheResult(cacheName = "SessionCache",
 	             skipGet = true)
-	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, @CacheKey IEnterpriseName<?> enterpriseName, UUID... identityToken)
+	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, @CacheKey  ISystems<?> system, UUID... identityToken)
 	{
-		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(session.getEnterpriseName());
+		IEnterprise<?> enterprise = system.getEnterprise();
 		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
 		
 		if (session == null || involvedParty == null || session.getInvolvedParty() == null)

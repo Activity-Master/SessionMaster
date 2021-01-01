@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
+import com.guicedee.activitymaster.core.services.dto.IEnterprise;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
-import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
+import com.guicedee.activitymaster.core.services.dto.ISystems;
 import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
@@ -38,7 +38,7 @@ public class Session
 	private final Map<String, String> values = new LinkedHashMap<>();
 	
 	private IInvolvedParty<?> involvedParty;
-	private IEnterpriseName<?> enterpriseName;
+	private ISystems<?> system;
 	
 	private boolean updated;
 	
@@ -96,10 +96,8 @@ public class Session
 		if (updated)
 		{
 			ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
-			sessionMasterService.updateSession(involvedParty, this, getEnterpriseName(),
-			                                   get(SessionMasterSystem.class).getSystemToken(
-					                                   get(IEnterpriseService.class).getEnterprise(getEnterpriseName()))
-			);
+			sessionMasterService.updateSession(involvedParty, this, getSystem()
+			                                  );
 		}
 		return this;
 	}
@@ -115,10 +113,9 @@ public class Session
 	{
 		values.remove(key);
 		ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
-		sessionMasterService.updateSession(involvedParty, this, getEnterpriseName(),
-		                                   get(SessionMasterSystem.class).getSystemToken(
-				                                   get(IEnterpriseService.class).getEnterprise(getEnterpriseName()))
-		);
+		sessionMasterService.updateSession(involvedParty, this, getSystem(),
+				get(SessionMasterSystem.class).getSystemToken(system.getEnterprise())
+		                                  );
 		return this;
 	}
 	
@@ -149,11 +146,6 @@ public class Session
 	public ISession<?> setInvolvedParty(IInvolvedParty<?> involvedParty)
 	{
 		this.involvedParty = involvedParty;
-		if (this.enterpriseName == null && involvedParty.getEnterprise() != null)
-		{
-			this.enterpriseName = involvedParty.getEnterprise()
-			                                   .getIEnterprise();
-		}
 		addValue("involved-party", involvedParty.getId()
 		                                        .toString());
 		return this;
@@ -173,24 +165,16 @@ public class Session
 	}
 	
 	@Override
-	public IEnterpriseName<?> getEnterpriseName()
+	public ISystems<?> getSystem()
 	{
-		if (enterpriseName == null)
-		{
-			if (involvedParty != null)
-			{
-				enterpriseName = involvedParty.getEnterprise()
-				                              .getIEnterprise();
-			}
-		}
-		return enterpriseName;
+		return system;
 	}
 	
 	@Override
-	public Session setEnterpriseName(IEnterpriseName<?> enterpriseName)
+	public Session setSystem(ISystems<?> system)
 	{
-		this.enterpriseName = enterpriseName;
-		addValue("enterprise", enterpriseName.toString());
+		this.system = system;
+		addValue("enterprise", system.toString());
 		return this;
 	}
 	
