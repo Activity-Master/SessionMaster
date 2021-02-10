@@ -13,6 +13,7 @@ import com.guicedee.activitymaster.sessions.services.classifications.SessionClas
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
 import jakarta.cache.annotation.CacheKey;
+import jakarta.cache.annotation.CacheRemove;
 import jakarta.cache.annotation.CacheResult;
 
 import java.io.IOException;
@@ -32,15 +33,13 @@ public class SessionMasterService
 	private final MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, String.class);
 	
 	@Override
-	@CacheResult(cacheName = "SessionCache")
-	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, @CacheKey  ISystems<?> system, UUID... identityToken)
+	public ISession<?> getSession(IInvolvedParty<?> involvedParty, ISystems<?> system, UUID... identityToken)
 	{
 		return getSession(involvedParty, new Session(), system, identityToken);
 	}
 	
 	@Override
-	@CacheResult(cacheName = "SessionCache")
-	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original, @CacheKey  ISystems<?> system, UUID... identityToken)
+	public ISession<?> getSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = system.getEnterprise();
 		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
@@ -50,21 +49,31 @@ public class SessionMasterService
 			if (session == null && involvedParty == null)
 			{
 				LogFactory.getLog("SessionMasterService")
-				          .warning("Session has no involved party. First session call?");
+				          .finer("Session has no involved party. First session call?");
 				return session;
 			}
 			
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
 			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
 			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = involvedParty.addOrReuseResourceItem(SessionClassifications.SessionObject,
-			                                                                                                                JsonPacket,
-			                                                                                                                null,
-			                                                                                                                null,
-			                                                                                                                sessionString.getBytes(),
-			                                                                                                                "encrypted/json", sessionSystem, identityToken);
-			byte[] storedSession = sessionObject.getSecondary()
-			                                    .getData();
-			sessionString = new String(new Passwords().integerDecrypt(new String(storedSession)));
+					JsonPacket,
+					null,
+					null,
+					sessionString.getBytes(),
+					"encrypted/json", sessionSystem, identityToken);
+			byte[] storedSession = null;
+			try
+			{
+				IResourceItem<?> secondary = sessionObject.getSecondary();
+				secondary.getData(identityToken);
+				storedSession = secondary
+						.getData();
+				sessionString = new String(new Passwords().integerDecrypt(new String(storedSession)));
+			}
+			catch (Exception e)
+			{
+				sessionString = "{}";
+			}
 			
 			HashMap<String, String> returned = new HashMap<>();
 			if (!(sessionString.isEmpty() || "{}".equals(sessionString)))
@@ -90,27 +99,51 @@ public class SessionMasterService
 	}
 	
 	@Override
-	@CacheResult(cacheName = "SessionCache",
-	             skipGet = true)
-	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session, @CacheKey  ISystems<?> system, UUID... identityToken)
+	public ISession<?> expireSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken)
 	{
 		IEnterprise<?> enterprise = system.getEnterprise();
 		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
-		
-		if (session == null || involvedParty == null || session.getInvolvedParty() == null)
+		ISession<?> session = original;
+		try
 		{
-			if (session.hasValue("involved-party"))
-			{
-				involvedParty = get(IInvolvedPartyService.class).findByID(UUID.fromString(session.as("involved-party", String.class)));
-				session.setInvolvedParty(involvedParty);
-			}
-			else
+			if (session == null && involvedParty == null)
 			{
 				LogFactory.getLog("SessionMasterService")
-				          .warning("Session has no involved party. First session call?");
+				          .finer("Session has no involved party. First session call?");
 				return session;
 			}
+			
+			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
+			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
+			IRelationshipValue<IInvolvedParty<?>, IResourceItem<?>, ?> sessionObject = involvedParty.addOrReuseResourceItem(SessionClassifications.SessionObject,
+					JsonPacket,
+					null,
+					null,
+					sessionString.getBytes(),
+					"encrypted/json", sessionSystem, identityToken);
+			
+			sessionObject.getSecondary()
+			             .remove();
+			sessionObject.expire();
 		}
+		catch (IOException e)
+		{
+			LogFactory.getLog("SessionMasterService")
+			          .log(Level.SEVERE, "Error serializing the inecoming object to retrieve a session", e);
+		}
+		if (session != null)
+		{
+			session.setSystem(system);
+			session.setInvolvedParty(involvedParty);
+		}
+		return session;
+	}
+	
+	@Override
+	public ISession<?> updateSession(IInvolvedParty<?> involvedParty, ISession<?> session, ISystems<?> system, UUID... identityToken)
+	{
+		IEnterprise<?> enterprise = system.getEnterprise();
+		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
 		try
 		{
 			AsyncSessionUpdate update = get(AsyncSessionUpdate.class);

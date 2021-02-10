@@ -80,7 +80,7 @@ public class Session
 			if (values.containsKey(key) && values.get(key)
 			                                     .equals(result))
 			{
-				//log.log(Level.FINE, "No session update required, value is the same");
+				log.log(Level.FINER, "No session update required, value is the same");
 			}
 			else
 			{
@@ -93,12 +93,12 @@ public class Session
 			log.log(Level.SEVERE, "Unable to serialize the given object for persistence", e);
 		}
 		
-		if (updated)
+		if(updated)
 		{
 			ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
-			sessionMasterService.updateSession(involvedParty, this, getSystem()
-			                                  );
+			sessionMasterService.updateSession(involvedParty, this, getSystem());
 		}
+		
 		return this;
 	}
 	
@@ -174,7 +174,6 @@ public class Session
 	public Session setSystem(ISystems<?> system)
 	{
 		this.system = system;
-		addValue("enterprise", system.toString());
 		return this;
 	}
 	

@@ -19,6 +19,7 @@ module com.guicedee.activitymaster.sessions {
 	
 	requires java.sql;
 	
+	requires com.jwebmp.core;
 
 	requires com.guicedee.activitymaster.core;
 	requires com.google.guice;

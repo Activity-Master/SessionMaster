@@ -3,6 +3,8 @@ package com.guicedee.activitymaster.sessions.services;
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 import com.guicedee.activitymaster.core.services.dto.ISystems;
+import jakarta.cache.annotation.CacheKey;
+import jakarta.cache.annotation.CacheRemove;
 
 import java.util.UUID;
 
@@ -19,6 +21,8 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 	ISession<?> getSession(IInvolvedParty<?> involvedParty, ISystems<?> system, UUID... identityToken);
 	
 	ISession<?> getSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken);
+
+	ISession<?> expireSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken);
 	
 	/**
 	 * Adds or Updates the Session to the given item
