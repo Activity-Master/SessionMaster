@@ -25,5 +25,18 @@
             <artifactId>jwebmp-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.armineasy.activitymaster</groupId>
+            <artifactId>profile-master</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.guicedee.services</groupId>
+            <artifactId>uadetector-core</artifactId>
+        </dependency>
+
+
     </dependencies>
 </project>

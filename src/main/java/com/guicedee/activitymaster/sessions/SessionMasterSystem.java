@@ -1,24 +1,30 @@
 package com.guicedee.activitymaster.sessions;
 
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.guicedee.activitymaster.core.services.IActivityMasterProgressMonitor;
 import com.guicedee.activitymaster.core.services.IActivityMasterSystem;
 import com.guicedee.activitymaster.core.services.dto.IEnterprise;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
 import com.guicedee.activitymaster.core.services.system.ActivityMasterDefaultSystem;
-import com.guicedee.activitymaster.core.services.system.IClassificationService;
-import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
+import com.guicedee.activitymaster.core.services.system.ISystemsService;
 
-import java.util.UUID;
-
-import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.activitymaster.sessions.services.ISessionMasterService.*;
 
 @Singleton
 public class SessionMasterSystem
 		extends ActivityMasterDefaultSystem<SessionMasterSystem>
 		implements IActivityMasterSystem<SessionMasterSystem>
 {
+	@Inject
+	private Provider<ISystemsService<?>> systemsService;
+	
+	@Override
+	public void registerSystem(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
+	{
+		systemsService.get()
+		              .create(enterprise, getSystemName(), getSystemDescription());
+	}
+	
+	
 	@Override
 	public void createDefaults(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
@@ -34,7 +40,7 @@ public class SessionMasterSystem
 	@Override
 	public String getSystemName()
 	{
-		return "Sessions Master";
+		return SessionMasterSystemName;
 	}
 
 	@Override

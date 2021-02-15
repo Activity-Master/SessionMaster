@@ -8,10 +8,13 @@ module com.guicedee.activitymaster.sessions {
 	
 	exports com.guicedee.activitymaster.sessions.services;
 	exports com.guicedee.activitymaster.sessions.services.classifications;
-
+	exports com.guicedee.activitymaster.sessions.services.dto;
+	
 	requires org.json;
 	requires com.guicedee.guicedpersistence;
 	requires com.guicedee.guicedservlets;
+
+	requires com.guicedee.activitymaster.profiles;
 	
 	requires cache.annotations.ri.common;
 	requires cache.annotations.ri.guice;
@@ -30,13 +33,17 @@ module com.guicedee.activitymaster.sessions {
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.core;
-	
+	requires net.sf.uadetector.core;
+
 	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceScanModuleInclusions with SessionsModuleInclusion;
 	
 	opens com.guicedee.activitymaster.sessions to com.google.guice, com.fasterxml.jackson.databind;
+	opens com.guicedee.activitymaster.sessions.services.dto to com.google.guice, com.fasterxml.jackson.databind;
 	opens com.guicedee.activitymaster.sessions.implementations to com.google.guice;
+	opens com.guicedee.activitymaster.sessions.implementations.providers to com.google.guice;
 	opens com.guicedee.activitymaster.sessions.implementations.updates to com.google.guice;
 	opens com.guicedee.activitymaster.sessions.services to com.google.guice;
+	
 }
