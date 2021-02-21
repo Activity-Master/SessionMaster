@@ -22,6 +22,8 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 
 	ISession<?> expireSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken);
 	
+	ISession<?> createSession(IInvolvedParty<?> involvedParty, ISession<?> session, ISystems<?> system, UUID... identityToken);
+	
 	/**
 	 * Adds or Updates the Session to the given item
 	 *

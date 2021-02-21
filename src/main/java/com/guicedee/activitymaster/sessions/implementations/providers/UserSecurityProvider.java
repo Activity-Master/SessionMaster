@@ -2,25 +2,21 @@ package com.guicedee.activitymaster.sessions.implementations.providers;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.guicedee.activitymaster.core.services.dto.IEnterprise;
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
-import com.guicedee.activitymaster.sessions.SessionMasterSystem;
 import com.guicedee.activitymaster.sessions.services.ISession;
-import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.jwebmp.core.base.ajax.AjaxCall;
 import com.jwebmp.core.utilities.StaticStrings;
 
-import java.util.UUID;
-
 public class UserSecurityProvider
 		implements Provider<UserSecurityDTO>
 {
 	@Inject
-	private ProfileServiceDTO profileServiceDTO;
+	private ProfileServiceDTO<?> profileServiceDTO;
+	@Inject
+	private ISession<?> session;
 	
 	@Override
 	public UserSecurityDTO get()
@@ -33,15 +29,6 @@ public class UserSecurityProvider
 			{
 				return new UserSecurityDTO();
 			}
-			IEnterprise<?> enterprise = involvedParty.getEnterprise();
-			
-			ISystems<?> system = GuiceContext.get(SessionMasterSystem.class)
-			                                 .getSystem(enterprise);
-			UUID systemToken = GuiceContext.get(SessionMasterSystem.class)
-			                               .getSystemToken(enterprise);
-			
-			ISessionMasterService<?> sessionMasterService = GuiceContext.get(ISessionMasterService.class);
-			ISession<?> session = sessionMasterService.getSession(involvedParty, system, systemToken);
 			UserSecurityDTO us;
 			if (session.hasValue("user-security"))
 			{

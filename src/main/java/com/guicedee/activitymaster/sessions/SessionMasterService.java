@@ -3,9 +3,10 @@ package com.guicedee.activitymaster.sessions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.guicedee.activitymaster.core.services.dto.*;
 import com.guicedee.activitymaster.core.services.security.Passwords;
-import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
 import com.guicedee.activitymaster.sessions.implementations.AsyncSessionUpdate;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
@@ -13,7 +14,6 @@ import com.guicedee.activitymaster.sessions.services.classifications.SessionClas
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
 import jakarta.cache.annotation.CacheKey;
-import jakarta.cache.annotation.CacheRemove;
 import jakarta.cache.annotation.CacheResult;
 
 import java.io.IOException;
@@ -32,17 +32,26 @@ public class SessionMasterService
 	private final TypeFactory typeFactory = mapper.getTypeFactory();
 	private final MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, String.class);
 	
+	@Inject
+	private IEnterprise<?> enterprise;
+	@Inject
+	@Named(SessionMasterSystemName)
+	private ISystems<?> sessionSystem;
+	@Inject
+	@Named(SessionMasterSystemName)
+	private UUID identityToken;
+	
 	@Override
-	public ISession<?> getSession(IInvolvedParty<?> involvedParty, ISystems<?> system, UUID... identityToken)
+	@CacheResult(cacheName = "SessionsCache")
+	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty,@CacheKey ISystems<?> system, UUID... identityToken)
 	{
 		return getSession(involvedParty, new Session(), system, identityToken);
 	}
 	
 	@Override
-	public ISession<?> getSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken)
+	@CacheResult(cacheName = "SessionsCache")
+	public ISession<?> getSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original,@CacheKey  ISystems<?> system, UUID... identityToken)
 	{
-		IEnterprise<?> enterprise = system.getEnterprise();
-		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
 		ISession<?> session = original;
 		try
 		{
@@ -99,10 +108,9 @@ public class SessionMasterService
 	}
 	
 	@Override
-	public ISession<?> expireSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken)
+	@CacheResult(cacheName = "SessionsCache",skipGet = true)
+	public ISession<?> expireSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> original,@CacheKey ISystems<?> system, UUID... identityToken)
 	{
-		IEnterprise<?> enterprise = system.getEnterprise();
-		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
 		ISession<?> session = original;
 		try
 		{
@@ -140,10 +148,31 @@ public class SessionMasterService
 	}
 	
 	@Override
-	public ISession<?> updateSession(IInvolvedParty<?> involvedParty, ISession<?> session, ISystems<?> system, UUID... identityToken)
+	@CacheResult(cacheName = "SessionsCache",skipGet = true)
+	public ISession<?> createSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session,@CacheKey ISystems<?> system, UUID... identityToken)
 	{
-		IEnterprise<?> enterprise = system.getEnterprise();
-		ISystems<?> sessionSystem = get(SessionMasterSystem.class).getSystem(enterprise);
+		try
+		{
+			AsyncSessionUpdate update = get(AsyncSessionUpdate.class);
+			update.setSession(session)
+			      .setSessionSystem(sessionSystem)
+			      .setIdentityToken(identityToken);
+			update.run();
+		/*	JobService.getInstance()
+			          .addJob("AsyncSessionUpdate", update);*/
+		}
+		catch (Throwable e)
+		{
+			LogFactory.getLog("SessionMasterService")
+			          .log(Level.SEVERE, "Error serializing the incoming object to retrieve a session", e);
+		}
+		return session;
+	}
+	
+	@Override
+	@CacheResult(cacheName = "SessionsCache",skipGet = true)
+	public ISession<?> updateSession(@CacheKey IInvolvedParty<?> involvedParty, ISession<?> session,@CacheKey ISystems<?> system, UUID... identityToken)
+	{
 		try
 		{
 			AsyncSessionUpdate update = get(AsyncSessionUpdate.class);
