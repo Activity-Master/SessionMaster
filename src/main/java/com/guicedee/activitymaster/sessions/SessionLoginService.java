@@ -83,7 +83,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	//	IEvent<?> registerEvent = get(IEventService.class)
 	//			.createEvent(UserRegistered, sessionMasterSystem, sessionMasterSystemUUID);
 		
-		IInvolvedParty<?> ipExists = involvedPartyService.findByIdentificationType(IdentificationTypeEmailAddress,
+		IInvolvedParty<?> ipExists = involvedPartyService.findByIdentificationType(IdentificationTypeUserName,
 				new Passwords().integerEncrypt(userRegistrationDTO.getUserName()
 				                                                  .getBytes())
 				, sessionMasterSystem, sessionMasterSystemUUID);
@@ -102,10 +102,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		                                  //                                                                        .toString(), sessionMasterSystem, SessionMasterSystemUUID);
 		//ActivityMasterConfiguration.get().setSecurityEnabled(true);
 		var idType
-				= newIp.addOrUpdateIdentificationType(IdentificationTypeEmailAddress,
+				= newIp.addOrUpdateIdentificationType(IdentificationTypeUserName,
 				NoClassification.classificationName(),
-				new Passwords().integerEncrypt(userRegistrationDTO.getUserName()
-				                                                  .getBytes()),
+				userRegistrationDTO.getUserName(),
 				sessionMasterSystem,
 				sessionMasterSystemUUID);
 		
@@ -118,8 +117,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		var idUserNameType
 				= newIp.addOrUpdateIdentificationType(IdentificationTypeUserName,
 				NoClassification.classificationName(),
-				new Passwords().integerEncrypt(userRegistrationDTO.getUserName()
-				                                                  .getBytes()),
+				userRegistrationDTO.getUserName(),
 				sessionMasterSystem,
 				sessionMasterSystemUUID);
 		newIp.expireIdentificationType(idUserNameType, Duration.of(2, HOURS));
