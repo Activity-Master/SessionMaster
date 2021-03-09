@@ -11,6 +11,7 @@ import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.guicedservlets.services.scopes.CallScope;
 import com.guicedee.logger.LogFactory;
 import jakarta.cache.annotation.CacheKey;
+import lombok.SneakyThrows;
 
 import java.io.Serial;
 import java.util.*;
@@ -58,43 +59,29 @@ public class Session
 		}
 	}
 	
+	@SneakyThrows
 	@Override
 	public ISession<?> addValue(String key, Object object)
 	{
-		updated = false;
-		try
+		String result;
+		if (!(object instanceof String))
 		{
-			String result;
-			if (!(object instanceof String))
-			{
-				result = get(DefaultObjectMapper).writeValueAsString(object);
-			}
-			else
-			{
-				result = object.toString();
-			}
-			if (values.containsKey(key) && values.get(key)
-			                                     .equals(result))
-			{
-				log.log(Level.FINER, "No session update required, value is the same");
-			}
-			else
-			{
-				updated = true;
-				values.put(key, result);
-			}
+			result = get(DefaultObjectMapper).writeValueAsString(object);
 		}
-		catch (JsonProcessingException e)
+		else
 		{
-			log.log(Level.SEVERE, "Unable to serialize the given object for persistence", e);
+			result = object.toString();
 		}
-		
-		if(updated)
+		if (values.containsKey(key) && values.get(key)
+		                                     .equals(result))
 		{
-			ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
-			sessionMasterService.updateSession(involvedParty, this, getSystem());
+			log.log(Level.FINER, "No session update required, value is the same");
 		}
-		
+		else
+		{
+			updated = true;
+			values.put(key, result);
+		}
 		return this;
 	}
 	
@@ -111,7 +98,7 @@ public class Session
 		ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
 		sessionMasterService.updateSession(involvedParty, this, getSystem(),
 				get(SessionMasterSystem.class).getSystemToken(system.getEnterprise())
-		                                  );
+		);
 		return this;
 	}
 	

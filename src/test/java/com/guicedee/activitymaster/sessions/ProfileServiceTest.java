@@ -5,7 +5,6 @@ import com.guicedee.activitymaster.core.ActivityMasterConfiguration;
 import com.guicedee.activitymaster.core.services.dto.IEnterprise;
 import com.guicedee.activitymaster.core.services.dto.ISystems;
 import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
-import com.guicedee.activitymaster.profiles.ProfileSystem;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 import com.guicedee.guicedinjection.interfaces.JobService;
@@ -35,9 +34,9 @@ class ProfileServiceTest
 
 		UserLoginDTO<?> newGuest = new UserLoginDTO<>().setWebClientUUID(UUID.randomUUID());
 		//newGuest.setReadableUserAgent()
-		ISystems<?> profileSystem = get(ProfileSystem.class)
+		ISystems<?> profileSystem = get(SessionMasterSystem.class)
 				                            .getSystem(enterprise);
-		UUID profileSystemUUID = get(ProfileSystem.class)
+		UUID profileSystemUUID = get(SessionMasterSystem.class)
 				                         .getSystemToken(enterprise);
 		newGuest = (UserLoginDTO<?>) ps.loginVisitor(newGuest, profileSystem, profileSystemUUID);
 		log.info("Created New Guest! Session Returned - " + stopwatch.stop()

@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.guicedee.activitymaster.core.services.dto.IEnterprise;
 import com.guicedee.activitymaster.core.services.dto.ISystems;
 import com.guicedee.activitymaster.core.threads.TransactionalIdentifiedThread;
-import com.guicedee.activitymaster.profiles.ProfileSystem;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
@@ -27,11 +26,11 @@ public class NewGuestThread
 	public void perform()
 	{
 		UserLoginDTO<?> newGuest = new UserLoginDTO<>().setWebClientUUID(UUID.randomUUID());
-		ISystems<?> profileSystem = get(ProfileSystem.class)
+		ISystems<?> profileSystem = get(SessionMasterSystem.class)
 				                            .getSystem(enterprise);
-		UUID profileSystemUUID = get(ProfileSystem.class)
+		UUID profileSystemUUID = get(SessionMasterSystem.class)
 				                         .getSystemToken(enterprise);
-		ProfileServiceDTO dto = ps.loginVisitor(newGuest, profileSystem, profileSystemUUID);
+		ProfileServiceDTO<?> dto = ps.loginVisitor(newGuest, profileSystem, profileSystemUUID);
 		log.info("Created Guest : " + newGuest.getWebClientUUID());
 	}
 }
