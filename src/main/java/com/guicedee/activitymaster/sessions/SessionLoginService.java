@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.guicedee.activitymaster.client.services.*;
-import com.guicedee.activitymaster.client.services.annotations.Event;
 import com.guicedee.activitymaster.client.services.builders.warehouse.classifications.IClassification;
 import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
@@ -80,7 +79,6 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	private UserSecurityDTO us;
 	
 	@Override
-	@Event("UserRegistered")
 	public UserConfirmationKeyDTO<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException
 	{
 		//	IEvent<?,?> registerEvent = get(IEventService.class)
@@ -162,7 +160,6 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
-	@Event("SiteVisit")
 	public ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
