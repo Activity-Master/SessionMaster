@@ -3,7 +3,7 @@ package com.guicedee.activitymaster.sessions.services.dto;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.guicedinjection.json.LocalDateTimeDeserializer;
 import com.guicedee.guicedinjection.json.LocalDateTimeSerializer;
@@ -27,6 +27,8 @@ public class UserSecurityDTO
 {
 	@Serial
 	private static final long serialVersionUID = 1L;
+	
+	public static final String USER_SECURITY_SESSION_NAME = "user-security";
 
 	private boolean loggedIn;
 	private boolean rememberMe;
@@ -90,13 +92,13 @@ public class UserSecurityDTO
 	{
 		ISession<?> session = get(ISession.class);
 
-		ISystems<?> system = session.getSystem();
-		if (!session.hasValue("user-security"))
+		ISystems<?,?> system = session.getSystem();
+		if (!session.hasValue(USER_SECURITY_SESSION_NAME))
 		{
 			return false;
 		}
 
-		UserSecurityDTO us = session.as("user-security", UserSecurityDTO.class);
+		UserSecurityDTO us = session.as(USER_SECURITY_SESSION_NAME, UserSecurityDTO.class);
 		if (us == null ||
 				us.getLoginExpiresOn() == null ||
 				us.getLoginExpiresOn()

@@ -1,25 +1,17 @@
 package com.guicedee.activitymaster.sessions.services.classifications;
 
-import com.guicedee.activitymaster.core.services.classifications.involvedparty.IInvolvedPartyClassification;
-import com.guicedee.activitymaster.core.services.classifications.resourceitems.IResourceItemClassification;
-import com.guicedee.activitymaster.core.services.enumtypes.IClassificationDataConceptValue;
-import com.guicedee.activitymaster.core.services.enumtypes.IClassificationValue;
-
-import static com.guicedee.activitymaster.core.services.concepts.EnterpriseClassificationDataConcepts.*;
+import static com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts.*;
 
 public enum SessionClassifications
-		implements IClassificationValue<SessionClassifications>
-				           , IInvolvedPartyClassification<SessionClassifications>,
-				           IResourceItemClassification<SessionClassifications>
 {
 	SessionLastUpdateTime("The last time the Involved Party was logged in", InvolvedPartyXResourceItem),
 	SessionObject("The object representing the session data information", InvolvedPartyXResourceItem),
 	;
 
 	private String description;
-	private IClassificationDataConceptValue<?> concept;
+	private com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept;
 
-	SessionClassifications(String description, IClassificationDataConceptValue<?> concept)
+	SessionClassifications(String description, com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept)
 	{
 		this.description = description;
 		this.concept = concept;
@@ -30,14 +22,12 @@ public enum SessionClassifications
 		this.description = description;
 	}
 
-	@Override
 	public String classificationDescription()
 	{
 		return this.description;
 	}
 
-	@Override
-	public IClassificationDataConceptValue<?> concept()
+	public com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept()
 	{
 		return concept;
 	}

@@ -3,7 +3,7 @@ package com.guicedee.activitymaster.sessions.implementations;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
@@ -28,7 +28,7 @@ public class CallScopeOnExitSessionPersist implements IOnCallScopeExit<CallScope
 	
 	@Inject
 	@Named(SessionMasterSystemName)
-	private ISystems<?> system;
+	private ISystems<?,?> system;
 	
 	@Inject
 	private Provider<UserSecurityDTO> userSecurityDTO;

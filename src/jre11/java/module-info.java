@@ -34,7 +34,8 @@ module com.guicedee.activitymaster.sessions {
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.core;
 	requires net.sf.uadetector.core;
-
+	requires com.guicedee.activitymaster.client;
+	
 	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceScanModuleInclusions with SessionsModuleInclusion;

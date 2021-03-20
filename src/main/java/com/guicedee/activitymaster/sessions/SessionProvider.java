@@ -3,7 +3,9 @@ package com.guicedee.activitymaster.sessions;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import com.guicedee.activitymaster.core.services.dto.*;
+import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
@@ -16,14 +18,14 @@ public class SessionProvider
 		implements Provider<ISession<Session>>
 {
 	@Inject
-	private IEnterprise<?> enterprise;
+	private IEnterprise<?,?> enterprise;
 	
 	@Inject
 	private ProfileServiceDTO<?> profileServiceDTO;
 	
 	@Inject
 	@Named(SessionMasterSystemName)
-	private ISystems<?> sessionSystem;
+	private ISystems<?,?> sessionSystem;
 	@Inject
 	@Named(SessionMasterSystemName)
 	private UUID systemToken;
@@ -40,7 +42,7 @@ public class SessionProvider
 		}
 		try
 		{
-			IInvolvedParty<?> byUUID = profileServiceDTO.findInvolvedParty();
+			IInvolvedParty<?,?> byUUID = profileServiceDTO.findInvolvedParty();
 			//noinspection unchecked
 			return (ISession<Session>) sessionMasterService.getSession(byUUID, sessionSystem, systemToken);
 		}catch (Throwable T)

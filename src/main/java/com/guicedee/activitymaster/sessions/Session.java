@@ -3,9 +3,10 @@ package com.guicedee.activitymaster.sessions;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
-import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
+import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
+import com.guicedee.activitymaster.client.services.IInvolvedPartyService;
+import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.guicedservlets.services.scopes.CallScope;
@@ -14,6 +15,7 @@ import jakarta.cache.annotation.CacheKey;
 import lombok.SneakyThrows;
 
 import java.io.Serial;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,8 +36,8 @@ public class Session
 	@JsonValue
 	private final Map<String, String> values = new LinkedHashMap<>();
 	
-	private IInvolvedParty<?> involvedParty;
-	private ISystems<?> system;
+	private IInvolvedParty<?,?> involvedParty;
+	private ISystems<?,?> system;
 	
 	private boolean updated;
 	
@@ -47,10 +49,7 @@ public class Session
 			return get(DefaultObjectMapper)
 					.writerWithDefaultPrettyPrinter()
 					.withoutFeatures(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-					.writeValueAsString(this)
-					.replaceAll("\n", "<br/>")
-					.replaceAll("\t", "&nbsp;")
-					.replace("\\\"", "\"");
+					.writeValueAsString(this);
 		}
 		catch (JsonProcessingException e)
 		{
@@ -118,7 +117,12 @@ public class Session
 			}
 			return get(DefaultObjectMapper).readValue(value, type);
 		}
-		catch (JsonProcessingException e)
+		catch (InvalidDefinitionException ide)
+		{
+			log.log(Level.FINE, MessageFormat.format("Invalid Session Object Deserialization - {0} / {1}", key, type.getSimpleName()));
+			return null;
+		}
+		catch (Throwable e)
 		{
 			log.log(Level.WARNING, "Unable to deserialize session object - ", e);
 			return null;
@@ -126,7 +130,7 @@ public class Session
 	}
 	
 	@Override
-	public ISession<?> setInvolvedParty(IInvolvedParty<?> involvedParty)
+	public ISession<?> setInvolvedParty(IInvolvedParty<?,?> involvedParty)
 	{
 		this.involvedParty = involvedParty;
 		addValue("involved-party", involvedParty.getId()
@@ -135,7 +139,7 @@ public class Session
 	}
 	
 	@Override
-	public IInvolvedParty<?> getInvolvedParty()
+	public IInvolvedParty<?,?> getInvolvedParty()
 	{
 		if (involvedParty == null)
 		{
@@ -148,13 +152,13 @@ public class Session
 	}
 	
 	@Override
-	public ISystems<?> getSystem()
+	public ISystems<?,?> getSystem()
 	{
 		return system;
 	}
 	
 	@Override
-	public Session setSystem(ISystems<?> system)
+	public Session setSystem(ISystems<?,?> system)
 	{
 		this.system = system;
 		return this;

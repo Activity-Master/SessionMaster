@@ -2,7 +2,7 @@ package com.guicedee.activitymaster.sessions.implementations.providers;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
+import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
@@ -24,20 +24,20 @@ public class UserSecurityProvider
 		AjaxCall<?> call = GuiceContext.get(AjaxCall.class);
 		if(call.getVariable(StaticStrings.LOCAL_STORAGE_VARIABLE_KEY) != null)
 		{
-			IInvolvedParty<?> involvedParty = profileServiceDTO.findInvolvedParty();
+			IInvolvedParty<?,?> involvedParty = profileServiceDTO.findInvolvedParty();
 			if (involvedParty == null)
 			{
 				return new UserSecurityDTO();
 			}
 			UserSecurityDTO us;
-			if (session.hasValue("user-security"))
+			if (session.hasValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME))
 			{
-				us = session.as("user-security", UserSecurityDTO.class);
+				us = session.as(UserSecurityDTO.USER_SECURITY_SESSION_NAME, UserSecurityDTO.class);
 			}
 			else
 			{
 				us = new UserSecurityDTO();
-				session.addValue("user-security", us);
+				session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
 			}
 			return us;
 		}

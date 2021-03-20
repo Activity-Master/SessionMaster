@@ -1,7 +1,7 @@
 package com.guicedee.activitymaster.sessions.services;
 
-import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
+import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 
 import java.util.UUID;
 
@@ -16,13 +16,13 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 	 *
 	 * @return An ISession that is scoped
 	 */
-	ISession<?> getSession(IInvolvedParty<?> involvedParty, ISystems<?> system, UUID... identityToken);
+	ISession<?> getSession(IInvolvedParty<?,?> involvedParty, ISystems<?,?> system, UUID... identityToken);
 	
-	ISession<?> getSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken);
+	ISession<?> getSession(IInvolvedParty<?,?> involvedParty, ISession<?> original, ISystems<?,?> system, UUID... identityToken);
 
-	ISession<?> expireSession(IInvolvedParty<?> involvedParty, ISession<?> original, ISystems<?> system, UUID... identityToken);
+	ISession<?> expireSession(IInvolvedParty<?,?> involvedParty, ISession<?> original, ISystems<?,?> system, UUID... identityToken);
 	
-	ISession<?> createSession(IInvolvedParty<?> involvedParty, ISession<?> session, ISystems<?> system, UUID... identityToken);
+	//ISession<?> createSession(IInvolvedParty<?,?> involvedParty, ISession<?> session, ISystems<?,?> system, UUID... identityToken);
 	
 	/**
 	 * Adds or Updates the Session to the given item
@@ -32,5 +32,5 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 	 *
 	 * @return The ISession
 	 */
-	ISession<?> updateSession(IInvolvedParty<?> involvedParty, ISession<?> session, ISystems<?> system, UUID... identityToken);
+	ISession<?> updateSession(IInvolvedParty<?,?> involvedParty, ISession<?> session, ISystems<?,?> system, UUID... identityToken);
 }

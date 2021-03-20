@@ -1,10 +1,10 @@
 package com.guicedee.activitymaster.sessions;
 
 import com.google.common.base.Stopwatch;
+import com.guicedee.activitymaster.client.services.IEnterpriseService;
+import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.core.ActivityMasterConfiguration;
-import com.guicedee.activitymaster.core.services.dto.IEnterprise;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
-import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 import com.guicedee.guicedinjection.interfaces.JobService;
@@ -29,12 +29,12 @@ class ProfileServiceTest
 		ISessionLoginService<?> ps = get(ISessionLoginService.class);
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		log.info("Started creating guest");
-		IEnterprise<?> enterprise = get(IEnterpriseService.class)
+		IEnterprise<?,?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(get(ActivityMasterConfiguration.class).getEnterpriseName());
 
 		UserLoginDTO<?> newGuest = new UserLoginDTO<>().setWebClientUUID(UUID.randomUUID());
 		//newGuest.setReadableUserAgent()
-		ISystems<?> profileSystem = get(SessionMasterSystem.class)
+		ISystems<?,?> profileSystem = get(SessionMasterSystem.class)
 				                            .getSystem(enterprise);
 		UUID profileSystemUUID = get(SessionMasterSystem.class)
 				                         .getSystemToken(enterprise);
@@ -49,7 +49,7 @@ class ProfileServiceTest
 		defaultWaitTime = 1;
 		defaultWaitUnit = MINUTES;
 		ExecutorService service = null;
-		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(TestEnterprise);
+		IEnterprise<?,?> enterprise = get(IEnterpriseService.class).getEnterprise(TestEnterprise.name());
 		for (int i = 0; i < 100; i++)
 		{
 			NewGuestThread thread = get(NewGuestThread.class);
@@ -63,7 +63,7 @@ class ProfileServiceTest
 	public void testCreate1000NewGuests()
 	{
 		ExecutorService service = null;
-		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(TestEnterprise);
+		IEnterprise<?,?> enterprise = get(IEnterpriseService.class).getEnterprise(TestEnterprise.name());
 		for (int i = 0; i < 1000; i++)
 		{
 			NewGuestThread thread = get(NewGuestThread.class);
@@ -79,7 +79,7 @@ class ProfileServiceTest
 	public void testCreate10000NewGuests()
 	{
 		ExecutorService service = null;
-		IEnterprise<?> enterprise = get(IEnterpriseService.class).getEnterprise(TestEnterprise);
+		IEnterprise<?,?> enterprise = get(IEnterpriseService.class).getEnterprise(TestEnterprise.name());
 		for (int i = 0; i < 10000; i++)
 		{
 			NewGuestThread thread = get(NewGuestThread.class);

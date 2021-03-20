@@ -1,12 +1,8 @@
 package com.guicedee.activitymaster.sessions.services;
 
-import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
-import com.guicedee.activitymaster.core.services.dto.IEnterprise;
-import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
-import com.guicedee.activitymaster.sessions.Session;
+import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 
@@ -36,11 +32,11 @@ public interface ISession<J extends ISession<J>>
 	
 	<T> T as(String key, Class<T> type);
 	
-	ISession<?> setInvolvedParty(IInvolvedParty<?> involvedParty);
+	ISession<?> setInvolvedParty(IInvolvedParty<?,?> involvedParty);
 	
-	IInvolvedParty<?> getInvolvedParty();
+	IInvolvedParty<?,?> getInvolvedParty();
 	
-	ISystems<?> getSystem();
+	ISystems<?,?> getSystem();
 	
-	ISession<?> setSystem(ISystems<?> system);
+	ISession<?> setSystem(ISystems<?,?> system);
 }
