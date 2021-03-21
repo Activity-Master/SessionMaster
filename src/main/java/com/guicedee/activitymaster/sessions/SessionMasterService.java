@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.guicedee.activitymaster.client.implementations.Passwords;
 import com.guicedee.activitymaster.client.services.IRelationshipValue;
 import com.guicedee.activitymaster.client.services.IResourceItemService;
 import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
@@ -68,7 +67,6 @@ public class SessionMasterService
 			}
 			
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
-			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
 			
 			IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
 			Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem = involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(),null, system,false,false, identityToken);
@@ -81,7 +79,7 @@ public class SessionMasterService
 			String currentSessionValue = new String(resourceItem.get().getSecondary().getData());
 			if (!Strings.isNullOrEmpty(currentSessionValue))
 			{
-				sessionString = new String(new Passwords().integerDecrypt(currentSessionValue));
+				sessionString = currentSessionValue;
 			}
 			else
 			{
@@ -125,7 +123,6 @@ public class SessionMasterService
 				return session;
 			}
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
-			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
 			Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem = involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(),null, system,false,false, identityToken);
 			resourceItem.get()
 			            .expire(identityToken);
@@ -157,9 +154,9 @@ public class SessionMasterService
 				return session;
 			}
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
-			sessionString = new Passwords().integerEncrypt(sessionString.getBytes());
-			
-			Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem = involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(),null, system,false,false, identityToken);
+
+			var resourceItem =
+					involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(),null, system,false,false, identityToken);
 			resourceItem.get()
 			            .getSecondary()
 			            .updateData(sessionString.getBytes(), system, identityToken);

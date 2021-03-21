@@ -4,7 +4,7 @@ import com.google.common.base.Stopwatch;
 import com.guicedee.activitymaster.client.services.IEnterpriseService;
 import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.core.ActivityMasterConfiguration;
+import com.guicedee.activitymaster.client.services.administration.ActivityMasterConfiguration;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 import com.guicedee.guicedinjection.interfaces.JobService;

@@ -36,7 +36,7 @@ public class CallScopeOnExitSessionPersist implements IOnCallScopeExit<CallScope
 	@Override
 	public void onScopeExit()
 	{
-		if (profileServiceDTO.getWebClientUUID() != null)
+		if (profileServiceDTO.getWebClientUUID() != null && profileServiceDTO.findInvolvedParty() != null)
 		{
 			userSecurityDTO.get()
 			               .setLoginExpiresOn(LocalDateTime.now()

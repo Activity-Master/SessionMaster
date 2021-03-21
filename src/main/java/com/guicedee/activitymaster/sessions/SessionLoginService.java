@@ -9,7 +9,7 @@ import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise
 import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.client.services.builders.warehouse.security.ISecurityToken;
 import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.core.services.exceptions.SecurityAccessException;
+import com.guicedee.activitymaster.client.services.exceptions.SecurityAccessException;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.profiles.dto.UserDTO;
 import com.guicedee.activitymaster.profiles.events.visits.*;

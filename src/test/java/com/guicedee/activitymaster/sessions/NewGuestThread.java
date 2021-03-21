@@ -1,12 +1,13 @@
 package com.guicedee.activitymaster.sessions;
 
 import com.google.inject.Inject;
+import com.guicedee.activitymaster.client.services.annotations.ActivityMasterDB;
 import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.core.threads.TransactionalIdentifiedThread;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
+import com.guicedee.guicedpersistence.db.annotations.Transactional;
 import lombok.extern.java.Log;
 
 import java.util.UUID;
@@ -15,7 +16,7 @@ import static com.guicedee.guicedinjection.GuiceContext.*;
 
 @Log
 public class NewGuestThread
-		extends TransactionalIdentifiedThread
+		extends Thread
 {
 	@Inject
 	private ISessionLoginService<?> ps;
@@ -23,7 +24,8 @@ public class NewGuestThread
 	private IEnterprise<?,?> enterprise;
 	
 	@Override
-	public void perform()
+	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	public void run()
 	{
 		UserLoginDTO<?> newGuest = new UserLoginDTO<>().setWebClientUUID(UUID.randomUUID());
 		ISystems<?,?> profileSystem = get(SessionMasterSystem.class)
