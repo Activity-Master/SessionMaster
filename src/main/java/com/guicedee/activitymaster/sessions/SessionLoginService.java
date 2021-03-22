@@ -62,6 +62,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	private IInvolvedPartyService<?> involvedPartyService;
 	
 	@Inject
+	private IPasswordsService<?> passwordsService;
+	
+	@Inject
 	@Named(SessionMasterSystemName)
 	private ISystems<?, ?> sessionMasterSystem;
 	
@@ -109,7 +112,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		idType.expire(Duration.of(2, HOURS),identityToken);
 		
-		involvedPartyService.addUpdateUsernamePassword(userRegistrationDTO.getUserName(), userRegistrationDTO.getPassword(), newIp, sessionMasterSystem,
+		passwordsService.addUpdateUsernamePassword(userRegistrationDTO.getUserName(), userRegistrationDTO.getPassword(), newIp, sessionMasterSystem,
 				sessionMasterSystemUUID);
 		
 		userRegistrationDTO.setPassword(null);
@@ -182,7 +185,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			if (profileServiceDTO instanceof UserLoginDTO)
 			{
 				UserLoginDTO<?> userDTO = (UserLoginDTO<?>) profileServiceDTO;
-				newIp = involvedPartyService.findByUsernameAndPassword(userDTO.getUserName()
+				newIp = passwordsService.findByUsernameAndPassword(userDTO.getUserName()
 						, userDTO.getPassword()
 						, sessionMasterSystem
 						, true
@@ -325,7 +328,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		IInvolvedParty<?, ?> newIp = null;
 		try
 		{
-			IInvolvedParty<?, ?> foundParty = involvedPartyService.findByUsernameAndPassword(profileServiceDTO.getUserName(),
+			IInvolvedParty<?, ?> foundParty = passwordsService.findByUsernameAndPassword(profileServiceDTO.getUserName(),
 					profileServiceDTO.getPassword(),
 					sessionMasterSystem,
 					true,
@@ -404,7 +407,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			throw new ProfileServiceException("Username cannot be empty");
 		}
-		return involvedPartyService.doesUsernameExist(userLoginDTO.getUserName(), system);
+		return passwordsService.doesUsernameExist(userLoginDTO.getUserName(), system);
 	}
 	
 	@Override
@@ -419,7 +422,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			throw new ProfileServiceException("Passwords cannot be empty");
 		}
 		
-		IInvolvedParty<?, ?> ip = involvedPartyService.findByUsernameAndPassword(userLoginDTO.getUserName(), userLoginDTO.getPassword(), sessionMasterSystem, true, identityToken);
+		IInvolvedParty<?, ?> ip = passwordsService.findByUsernameAndPassword(userLoginDTO.getUserName(), userLoginDTO.getPassword(), sessionMasterSystem, true, identityToken);
 		userLoginDTO = new UserLoginDTO<>().setIdentityToken(ip.getId());
 		return userLoginDTO;
 	}

@@ -14,7 +14,7 @@ import static com.guicedee.activitymaster.profiles.enumerations.ProfileEventType
 import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 
-@DatedUpdate(date = "2020/11/01", taskCount = 1)
+@SortedUpdate(sortOrder = 75, taskCount = 1)
 public class SessionMasterInstall implements ISystemUpdate
 {
 	@Override
