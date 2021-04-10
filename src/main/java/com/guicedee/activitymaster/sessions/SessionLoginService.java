@@ -12,6 +12,7 @@ import com.guicedee.activitymaster.client.services.builders.warehouse.systems.IS
 import com.guicedee.activitymaster.client.services.exceptions.SecurityAccessException;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.profiles.dto.UserDTO;
+import com.guicedee.activitymaster.profiles.events.UpdateNewVisitEvent;
 import com.guicedee.activitymaster.profiles.events.visits.*;
 import com.guicedee.activitymaster.profiles.exceptions.*;
 import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
@@ -154,6 +155,15 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			identityToken = new UUID[]{sessionMasterSystemUUID};
 		}
+		var idWebClient
+				= profileServiceDTO.findInvolvedParty()
+				                   .findInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(), null, sessionMasterSystem, true, true,
+						                   sessionMasterSystemUUID);
+		if (idWebClient.isPresent())
+		{
+			idWebClient.get()
+			           .archive(system, identityToken);
+		}
 		us.setRememberMe(false);
 		us.setLoggedIn(false);
 		us.setLoginExpiresOn(LocalDateTime.now());
@@ -283,17 +293,17 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		profileServiceDTO.setIdentityToken(newIp.getId());
 		
-	/*	UpdateNewVisitEvent visitEvent = get(UpdateNewVisitEvent.class);
+		UpdateNewVisitEvent visitEvent = get(UpdateNewVisitEvent.class);
 		visitEvent.setEnterprise(enterprise)
 		          .setProfileServiceDTO(profileServiceDTO)
 		          .setIdentityToken(new UUID[]{newIp.getId()})
-		          .setNewIp(newIp);*/
+		          .setNewIp(newIp);
 		
 		
 		rolesService.addRole(newIp, Visitor.toString(), profileServiceDTO, sessionMasterSystem, sessionMasterSystemUUID);
 		
-	/*	JobService.getInstance()
-		          .addJob(UpdateNewVisitEvent.getJobServiceName(), visitEvent);*/
+		JobService.getInstance()
+		          .addJob(UpdateNewVisitEvent.getJobServiceName(), visitEvent);
 		
 		return newIp;
 	}
@@ -347,13 +357,13 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 				              .equals(newIp.getId()))
 				{
 					sessionMasterService.expireSession(currentIp, session, system, sessionMasterSystemUUID);
-					currentIp.moveWebClientUUIDToNewInvolvedParty(newIp,
-							idWebClient.get()
-							           .getValueAsUUID());
+					idWebClient.get()
+					           .archive(system,identityToken);
+					newIp.addInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(), idWebClient.get()
+					                                                                                                                             .getValue(), system, identityToken);
 				}
 			}
 			setUserLoggedIn(newIp, profileServiceDTO, profileServiceDTO.isRememberMe(), system, sessionMasterSystemUUID);
-			
 		}
 		catch (SecurityAccessException e)
 		{
