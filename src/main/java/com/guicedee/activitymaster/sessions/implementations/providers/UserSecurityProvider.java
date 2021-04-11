@@ -23,6 +23,11 @@ public class UserSecurityProvider
 	@Override
 	public UserSecurityDTO get()
 	{
+		if (session == null)
+		{
+			GuiceContext.inject()
+			            .injectMembers(this);
+		}
 		AjaxCall<?> call = GuiceContext.get(AjaxCall.class);
 		if(call.getVariable(StaticStrings.LOCAL_STORAGE_VARIABLE_KEY) != null)
 		{
