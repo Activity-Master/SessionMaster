@@ -1,9 +1,9 @@
 package com.guicedee.activitymaster.sessions;
 
 import com.google.inject.Inject;
-import com.guicedee.activitymaster.client.services.annotations.ActivityMasterDB;
-import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.annotations.ActivityMasterDB;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;

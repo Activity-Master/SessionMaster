@@ -1,17 +1,25 @@
 package com.guicedee.activitymaster.sessions.services.classifications;
 
-import static com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts.*;
 
 public enum SessionClassifications
 {
+	SessionInformation("Describes information related to a session", Classification),
+	
 	SessionLastUpdateTime("The last time the Involved Party was logged in", InvolvedPartyXResourceItem),
 	SessionObject("The object representing the session data information", InvolvedPartyXResourceItem),
+	
+	DeviceUsedBy("The device is used by ", InvolvedPartyXInvolvedParty),
+	UserLoggedIn("The logged in Involved Party ", EventXInvolvedParty),
+	UserLoggedOut("The Involved Party logged out", EventXInvolvedParty),
+	UserSessionExpired("The Involved Party logged out by expiration", EventXInvolvedParty),
+	SystemPerformed("The event was performed by the system Involved Party", EventXInvolvedParty),
 	;
 
 	private String description;
-	private com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept;
+	private com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept;
 
-	SessionClassifications(String description, com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept)
+	SessionClassifications(String description, com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept)
 	{
 		this.description = description;
 		this.concept = concept;
@@ -27,7 +35,7 @@ public enum SessionClassifications
 		return this.description;
 	}
 
-	public com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept()
+	public com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept()
 	{
 		return concept;
 	}

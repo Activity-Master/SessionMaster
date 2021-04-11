@@ -1,11 +1,12 @@
 package com.guicedee.activitymaster.sessions.services;
 
-import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 
 import java.io.Serializable;
 
 
+@SuppressWarnings("UnusedReturnValue")
 public interface ISession<J extends ISession<J>>
 		extends Serializable
 {

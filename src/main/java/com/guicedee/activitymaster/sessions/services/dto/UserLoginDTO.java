@@ -1,14 +1,11 @@
 package com.guicedee.activitymaster.sessions.services.dto;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.*;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import lombok.*;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
 

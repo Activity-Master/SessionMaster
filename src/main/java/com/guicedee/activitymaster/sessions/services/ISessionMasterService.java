@@ -1,7 +1,7 @@
 package com.guicedee.activitymaster.sessions.services;
 
-import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 
 import java.util.UUID;
 
@@ -19,7 +19,9 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 	ISession<?> getSession(IInvolvedParty<?,?> involvedParty, ISystems<?,?> system, UUID... identityToken);
 	
 	ISession<?> getSession(IInvolvedParty<?,?> involvedParty, ISession<?> original, ISystems<?,?> system, UUID... identityToken);
-
+	
+	ISession<?> updateCache(IInvolvedParty<?, ?> involvedParty, ISession<?> original, ISystems<?, ?> system, UUID... identityToken);
+	
 	ISession<?> expireSession(IInvolvedParty<?,?> involvedParty, ISession<?> original, ISystems<?,?> system, UUID... identityToken);
 	
 	//ISession<?> createSession(IInvolvedParty<?,?> involvedParty, ISession<?> session, ISystems<?,?> system, UUID... identityToken);

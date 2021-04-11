@@ -1,10 +1,10 @@
 package com.guicedee.activitymaster.sessions;
 
 import com.google.common.base.Stopwatch;
-import com.guicedee.activitymaster.client.services.IEnterpriseService;
-import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.client.services.administration.ActivityMasterConfiguration;
+import com.guicedee.activitymaster.fsdm.client.services.IEnterpriseService;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.administration.ActivityMasterConfiguration;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 import com.guicedee.guicedinjection.interfaces.JobService;
@@ -14,7 +14,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 
-import static com.guicedee.activitymaster.core.DefaultEnterprise.*;
+import static com.guicedee.activitymaster.fsdm.DefaultEnterprise.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static java.util.concurrent.TimeUnit.*;
 

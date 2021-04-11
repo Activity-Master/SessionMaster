@@ -2,14 +2,16 @@ package com.guicedee.activitymaster.sessions.implementations.providers;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
 import com.guicedee.guicedinjection.GuiceContext;
+import com.guicedee.guicedservlets.services.scopes.CallScope;
 import com.jwebmp.core.base.ajax.AjaxCall;
 import com.jwebmp.core.utilities.StaticStrings;
 
+@CallScope
 public class UserSecurityProvider
 		implements Provider<UserSecurityDTO>
 {

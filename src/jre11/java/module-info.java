@@ -1,4 +1,4 @@
-import com.guicedee.activitymaster.client.services.systems.IActivityMasterSystem;
+import com.guicedee.activitymaster.fsdm.client.services.systems.IActivityMasterSystem;
 import com.guicedee.activitymaster.sessions.SessionMasterSystem;
 import com.guicedee.activitymaster.sessions.implementations.*;
 import com.guicedee.guicedservlets.services.IOnCallScopeExit;
@@ -25,7 +25,7 @@ module com.guicedee.activitymaster.sessions {
 	
 	requires com.jwebmp.core;
 
-	requires com.guicedee.activitymaster.core;
+	requires com.guicedee.activitymaster.fsdm;
 	requires com.google.guice;
 	
 	requires com.guicedee.guicedinjection;
@@ -35,7 +35,7 @@ module com.guicedee.activitymaster.sessions {
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.core;
 	requires net.sf.uadetector.core;
-	requires com.guicedee.activitymaster.client;
+	requires com.guicedee.activitymaster.fsdm.client;
 	
 	provides IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;

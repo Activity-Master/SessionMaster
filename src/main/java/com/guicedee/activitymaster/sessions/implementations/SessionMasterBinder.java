@@ -7,6 +7,7 @@ import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
 import com.guicedee.guicedinjection.interfaces.IGuiceModule;
 import com.guicedee.guicedservlets.services.scopes.CallScope;
+import com.guicedee.activitymaster.sessions.*;
 
 public class SessionMasterBinder
 		extends PrivateModule
@@ -37,12 +38,11 @@ public class SessionMasterBinder
 				= Key.get(new TypeLiteral<ISession<Session>>() {});
 		
 		bind(genericKeySession).to(realKeySession);
-		bind(realKeySession).toProvider(SessionProvider.class).in(CallScope.class);
+		bind(realKeySession).toProvider(SessionProvider.class);
 		bind(ISession.class).to(genericKeySession);
 		
 		expose(genericKeySession);
 		expose(ISession.class);
-		
 		
 		@SuppressWarnings("Convert2Diamond")
 		Key<ISessionLoginService<?>> genericKeySessionLoginService = Key.get(new TypeLiteral<ISessionLoginService<?>>() {});
@@ -57,9 +57,8 @@ public class SessionMasterBinder
 		expose(genericKeySessionLoginService);
 		expose(ISessionLoginService.class);
 		
-		bind(UserSecurityDTO.class).toProvider(UserSecurityProvider.class).in(CallScope.class);
+		bind(UserSecurityDTO.class).toProvider(UserSecurityProvider.class);
 		expose(UserSecurityDTO.class);
-		
 	}
 
 }

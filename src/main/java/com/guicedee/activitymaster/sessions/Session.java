@@ -4,12 +4,10 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
-import com.guicedee.activitymaster.client.services.IInvolvedPartyService;
-import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.ISession;
-import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
-import com.guicedee.guicedservlets.services.scopes.CallScope;
 import com.guicedee.logger.LogFactory;
 import jakarta.cache.annotation.CacheKey;
 import lombok.SneakyThrows;
@@ -25,7 +23,6 @@ import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@CallScope
 public class Session
 		implements ISession<Session>
 {
@@ -38,8 +35,6 @@ public class Session
 	
 	private IInvolvedParty<?,?> involvedParty;
 	private ISystems<?,?> system;
-	
-	private boolean updated;
 	
 	@Override
 	public String toString()
@@ -78,7 +73,6 @@ public class Session
 		}
 		else
 		{
-			updated = true;
 			values.put(key, result);
 		}
 		return this;
@@ -94,10 +88,6 @@ public class Session
 	public ISession<?> removeValue(@CacheKey String key)
 	{
 		values.remove(key);
-		ISessionMasterService<?> sessionMasterService = get(ISessionMasterService.class);
-		sessionMasterService.updateSession(involvedParty, this, getSystem(),
-				get(SessionMasterSystem.class).getSystemToken(system.getEnterprise())
-		);
 		return this;
 	}
 	
@@ -154,6 +144,10 @@ public class Session
 	@Override
 	public ISystems<?,?> getSystem()
 	{
+		if (system == null && involvedParty != null)
+		{
+			system = involvedParty.getOriginalSourceSystemID();
+		}
 		return system;
 	}
 	
@@ -167,16 +161,5 @@ public class Session
 	public Map<String, String> getValues()
 	{
 		return values;
-	}
-	
-	public boolean isUpdated()
-	{
-		return updated;
-	}
-	
-	public Session setUpdated(boolean updated)
-	{
-		this.updated = updated;
-		return this;
 	}
 }

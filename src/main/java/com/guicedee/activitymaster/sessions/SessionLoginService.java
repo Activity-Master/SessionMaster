@@ -2,46 +2,61 @@ package com.guicedee.activitymaster.sessions;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import com.guicedee.activitymaster.client.services.*;
-import com.guicedee.activitymaster.client.services.builders.warehouse.classifications.IClassification;
-import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.client.services.builders.warehouse.security.ISecurityToken;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.client.services.exceptions.SecurityAccessException;
+import com.guicedee.activitymaster.fsdm.client.services.*;
+import com.guicedee.activitymaster.fsdm.client.services.annotations.*;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.address.IAddress;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.classifications.IClassification;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedPartyType;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.exceptions.InvolvedPartyException;
+import com.guicedee.activitymaster.fsdm.client.services.exceptions.SecurityAccessException;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.profiles.dto.UserDTO;
-import com.guicedee.activitymaster.profiles.events.UpdateNewVisitEvent;
-import com.guicedee.activitymaster.profiles.events.visits.*;
 import com.guicedee.activitymaster.profiles.exceptions.*;
 import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
 import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.activitymaster.sessions.services.dto.*;
-import com.guicedee.guicedinjection.interfaces.JobService;
+import com.guicedee.guicedinjection.GuiceContext;
+import com.guicedee.guicedinjection.json.LocalDateTimeDeserializer;
 import com.guicedee.guicedinjection.pairing.Pair;
 import com.guicedee.guicedservlets.GuicedServletKeys;
+import com.guicedee.logger.LogFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import net.sf.uadetector.ReadableUserAgent;
+import org.json.JSONObject;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.guicedee.activitymaster.client.services.classifications.DefaultClassifications.*;
-import static com.guicedee.activitymaster.client.services.classifications.InvolvedPartyClassifications.*;
-import static com.guicedee.activitymaster.client.services.classifications.SecurityTokenClassifications.*;
-import static com.guicedee.activitymaster.client.services.classifications.types.IdentificationTypes.*;
+import static com.guicedee.activitymaster.fsdm.client.services.annotations.EventAction.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.DefaultClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.InvolvedPartyClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.address.AddressLocalSystemClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.address.AddressRemoteSystemClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.address.AddressWebClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.IPTypes.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.IdentificationTypes.*;
 import static com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileIdentificationTypes.*;
+import static com.guicedee.activitymaster.profiles.enumerations.SiteClientClassifications.*;
 import static com.guicedee.activitymaster.profiles.services.enumerations.UserRoles.*;
+import static com.guicedee.activitymaster.profiles.services.interfaces.IRolesService.*;
 import static com.guicedee.activitymaster.sessions.services.ISessionMasterService.*;
+import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static java.time.temporal.ChronoUnit.*;
+
 
 public class SessionLoginService implements ISessionLoginService<SessionLoginService>
 {
@@ -67,11 +82,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	
 	@Inject
 	@Named(SessionMasterSystemName)
-	private ISystems<?, ?> sessionMasterSystem;
+	private Provider<ISystems<?, ?>> system;
 	
 	@Inject
 	@Named(SessionMasterSystemName)
-	private UUID sessionMasterSystemUUID;
+	private UUID identityToken;
 	
 	@Inject
 	private ProfileServiceDTO<?> dto;
@@ -83,16 +98,263 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	private UserSecurityDTO us;
 	
 	@Override
+	public ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
+	{
+		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
+		{
+			identityToken = new UUID[]{this.identityToken};
+		}
+		IInvolvedParty<?, ?> iInvolvedParty = involvedPartyService.get();
+		IInvolvedParty<?, ?> deviceIP = iInvolvedParty.builder()
+		                                              .findByType(TypeDevice.toString(), dto.getWebClientUUID()
+		                                                                                    .toString(),
+				                                              system, identityToken)
+		                                              .get()
+		                                              .orElse(null);
+		if (deviceIP == null)
+		{
+			deviceIP = createDeviceIP(profileServiceDTO);
+			//new device there will be nothing else ever
+			profileServiceDTO.setInvolvedParty(deviceIP);
+			profileServiceDTO.setIdentityToken(deviceIP.getId());
+			configureFromReadableUserAgent(deviceIP, GuiceContext.get(ReadableUserAgent.class), system, identityToken);
+			try
+			{
+				HttpServletRequest request = get(GuicedServletKeys.getHttpServletRequestKey());
+				configureFromHTTPServletRequest(profileServiceDTO, deviceIP, system, request, enterprise);
+			}
+			catch (Throwable T)
+			{
+				log.log(Level.FINER, "Unable to log servlet request information", T);
+			}
+		}
+		//search by web client uuid
+		IInvolvedParty<?, ?> foundIPCurrentOnDevice = dto.findInvolvedParty();
+		if (foundIPCurrentOnDevice == null)
+		{
+			//new device there will be nothing else ever
+			profileServiceDTO.setInvolvedParty(deviceIP);
+			profileServiceDTO.setIdentityToken(deviceIP.getId());
+			foundIPCurrentOnDevice = deviceIP;
+		}
+		else
+		{
+			profileServiceDTO.setInvolvedParty(foundIPCurrentOnDevice);
+			profileServiceDTO.setIdentityToken(foundIPCurrentOnDevice.getId());
+		}
+		
+		session = sessionMasterService.getSession(foundIPCurrentOnDevice, system, identityToken);
+		session.setInvolvedParty(foundIPCurrentOnDevice);
+		session.setSystem(system);
+		updateLatestVisit(foundIPCurrentOnDevice, identityToken);
+		
+		Set<String> roles = new TreeSet<>();
+		if (us
+		      .isLoggedIn())
+		{
+			if (!us
+			       .getLoginExpiresOn()
+			       .isBefore(LocalDateTime.now()))
+			{
+				loginUser(new UserLoginDTO<>().setInvolvedParty(foundIPCurrentOnDevice)
+				                              .setWebClientUUID(profileServiceDTO.getWebClientUUID())
+				                              .setIdentityToken(foundIPCurrentOnDevice.getId()),
+						true, system, identityToken);
+				roles.addAll(rolesService.getRoles(session.getInvolvedParty(), system, identityToken));
+			}
+		}
+		else
+		{
+			if (!foundIPCurrentOnDevice.equals(deviceIP))
+			{
+				logoutUser(profileServiceDTO, system, identityToken);
+			}
+			roles.addAll(Set.of(Visitor.toString()));
+		}
+		session.setSystem(system);
+		session.addValue(USER_ROLES_SESSION_NAME, roles);
+		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
+		
+		sessionMasterService.updateCache(foundIPCurrentOnDevice, session, system, identityToken);
+		
+		return profileServiceDTO;
+	}
+	
+	private IInvolvedParty<?, ?> authenticate(UserLoginDTO<?> loginDTO)
+	{
+		return passwordsService.findByUsernameAndPassword(loginDTO.getUserName(),
+				loginDTO.getPassword(),
+				system.get(),
+				true,
+				identityToken);
+	}
+	
+	@Override
+	public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
+	{
+		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
+		{
+			identityToken = new UUID[]{this.identityToken};
+		}
+		IInvolvedParty<?, ?> deviceIP = involvedPartyService.get()
+		                                                    .builder()
+		                                                    .findByType(TypeDevice.toString(), dto.getWebClientUUID()
+		                                                                                          .toString(),
+				                                                    system, identityToken)
+		                                                    .get()
+		                                                    .orElseThrow(() -> new InvolvedPartyException("Device IP must already exist before attempting to login"));
+		try
+		{
+			IInvolvedParty<?, ?> foundParty;
+			if (!alreadyVerified)
+			{
+				foundParty = authenticate(profileServiceDTO);
+				profileServiceDTO.setPassword(null);
+			}
+			else
+			{
+				foundParty = profileServiceDTO.findInvolvedParty();
+			}
+			
+			//move the webclient uuid to the new user, from device id, or wherever it is now
+			//maybe do a if its not logged out check?
+			String webClientID = profileServiceDTO.getWebClientUUID()
+			                                      .toString();
+			
+			var involvedPartyIdentificationType
+					= deviceIP.findInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(), webClientID,
+					system, true, true, identityToken);
+			if (involvedPartyIdentificationType.isPresent())
+			{
+				involvedPartyIdentificationType.get()
+				                               .archive(system, identityToken);
+			}
+			deviceIP.addChild(foundParty, DeviceUsedBy.toString(), webClientID, system, identityToken);
+			foundParty.addOrUpdateInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
+					webClientID, webClientID,
+					system, identityToken);
+			
+			setUserLoggedIn(foundParty, profileServiceDTO, profileServiceDTO.isRememberMe(), system, this.identityToken);
+		}
+		catch (SecurityAccessException e)
+		{
+			throw new ProfileServiceException("Invalid username or password");
+		}
+		return profileServiceDTO;
+	}
+	
+	
+	@Override
+	public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
+	{
+		return loginUser(profileServiceDTO, false, system, identityToken);
+	}
+	
+	@InvolvedPartyEvent(Added)
+	@LogItemEvent(Added)
+	void setUserLoggedIn(@Party("UserLoggingIn") IInvolvedParty<?, ?> newIp,
+	                     @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
+	                     boolean rememberMe,
+	                     @Party("SystemPerformed") ISystems<?, ?> system, UUID... identityToken)
+	{
+		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
+		{
+			identityToken = new UUID[]{this.identityToken};
+		}
+		session.setInvolvedParty(newIp);
+		profileServiceDTO.setInvolvedParty(newIp);
+		profileServiceDTO.setIdentityToken(newIp.getId());
+		dto.setWebClientUUID(profileServiceDTO.getWebClientUUID());
+		dto.setIdentityToken(profileServiceDTO.getIdentityToken());
+		dto.setEnterprise(system.getEnterprise());
+		session.addValue(IDENTITY_SESSION_NAME, dto);
+		UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
+		us
+		  .setLoggedIn(true)
+		  .setLoginExpiresOn(rememberMe
+				  ? LocalDateTime.MAX
+				  : LocalDateTime.now()
+				                 .plusMinutes(20))
+		  .setRememberMe(rememberMe);
+		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
+		dto.setEnterprise(enterprise);
+		dto.setInvolvedParty(newIp);
+		
+		sessionMasterService.updateCache(newIp, session, system, identityToken);
+	}
+	
+	@Override
+	public ProfileServiceDTO<?> logoutUser(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
+	{
+		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
+		{
+			identityToken = new UUID[]{this.identityToken};
+		}
+		var deviceIP
+				= createDeviceIP(profileServiceDTO);
+		
+		var idWebClient
+				= profileServiceDTO.findInvolvedParty()
+				                   .findInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
+						                   profileServiceDTO.getWebClientUUID()
+						                                    .toString(), system, false, false,
+						                   this.identityToken);
+		if (idWebClient.isPresent())
+		{
+			idWebClient.get()
+			           .archive(system, identityToken);
+			deviceIP.archiveChild(idWebClient.get()
+			                                 .getPrimary(), DeviceUsedBy.toString(), null, system, identityToken);
+		}
+		
+		String uuid = profileServiceDTO.getWebClientUUID()
+		                               .toString();
+		deviceIP.addOrUpdateInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
+				uuid,
+				uuid,
+				system, identityToken);
+		
+		setLoggedOut(profileServiceDTO.findInvolvedParty(), deviceIP, profileServiceDTO, system, identityToken);
+		
+		return profileServiceDTO;
+	}
+
+	@InvolvedPartyEvent(value = Added)
+	@LogItemEvent(value = Added)
+	void setLoggedOut(@Party("UserLoggedOut") IInvolvedParty<?, ?> involvedParty,
+	                          @Party("DeviceUsedBy") IInvolvedParty<?, ?> deviceIP,
+	                          @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
+	                          @Party("SystemPerformed") ISystems<?, ?> system, UUID... identityToken)
+	{
+		us
+		  .setRememberMe(false);
+		us
+		  .setLoggedIn(false);
+		us
+		  .setLoginExpiresOn(LocalDateTime.now());
+		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
+		session.removeValue(USER_ROLES_SESSION_NAME);
+		sessionMasterService.updateCache(involvedParty, session, system, identityToken);
+		
+		//set profile service dto to the device IP
+		profileServiceDTO.setIdentityToken(deviceIP.getId());
+		profileServiceDTO.setInvolvedParty(deviceIP);
+		session.setInvolvedParty(deviceIP);
+		session.setSystem(system);
+		sessionMasterService.updateCache(deviceIP, session, system, identityToken);
+	}
+	
+	@Override
 	public UserConfirmationKeyDTO<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException
 	{
-		//	IEvent<?,?> registerEvent = get(IEventService.class)
-		//			.createEvent(UserRegistered, sessionMasterSystem, sessionMasterSystemUUID);
-		
-		IInvolvedParty<?, ?> ipExists = involvedPartyService.findByIdentificationType(IdentificationTypeUserName.toString(), userRegistrationDTO.getUserName(), sessionMasterSystem, sessionMasterSystemUUID);
-		
+		IInvolvedParty<?, ?> ipExists = involvedPartyService.get()
+		                                                    .builder()
+		                                                    .findByIdentificationType(IdentificationTypeUserName.toString(), userRegistrationDTO.getUserName(), system, identityToken)
+		                                                    .get()
+		                                                    .orElse(null);
 		if (ipExists != null)
 		{
-			if (ipExists.hasClassifications(ConfirmationKey, null, sessionMasterSystem, identityToken))
+			if (ipExists.hasClassifications(ConfirmationKey, null, system, identityToken))
 			{
 				throw new WaitingForConfirmationKeyException("The email address is waiting for a confirmation key");
 			}
@@ -108,13 +370,13 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 				IdentificationTypeUserName,
 				userRegistrationDTO.getUserName(),
 				userRegistrationDTO.getUserName(),
-				sessionMasterSystem,
-				sessionMasterSystemUUID);
+				system,
+				this.identityToken);
 		
-		idType.expire(Duration.of(2, HOURS),identityToken);
+		idType.expire(Duration.of(2, HOURS), identityToken);
 		
-		passwordsService.addUpdateUsernamePassword(userRegistrationDTO.getUserName(), userRegistrationDTO.getPassword(), newIp, sessionMasterSystem,
-				sessionMasterSystemUUID);
+		passwordsService.addUpdateUsernamePassword(userRegistrationDTO.getUserName(), userRegistrationDTO.getPassword(), newIp, system,
+				this.identityToken);
 		
 		userRegistrationDTO.setPassword(null);
 		var idUserNameType
@@ -122,291 +384,64 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 				IdentificationTypeUserName,
 				userRegistrationDTO.getUserName(),
 				userRegistrationDTO.getUserName(),
-				sessionMasterSystem,
-				sessionMasterSystemUUID);
-		idUserNameType.expire(Duration.of(2, HOURS),identityToken);
+				system,
+				this.identityToken);
+		idUserNameType.expire(Duration.of(2, HOURS), identityToken);
 		
 		Optional<? extends IRelationshipValue<?, IClassification<?, ?>, ?>> classification = newIp.findClassification(SecurityPassword, system, identityToken);
 		Optional<? extends IRelationshipValue<?, IClassification<?, ?>, ?>> classification1 = newIp.findClassification(SecurityPasswordSalt, system, identityToken);
 		
-		classification.get().expire(Duration.of(2, HOURS), sessionMasterSystemUUID);
-		classification1.get().expire(Duration.of(2, HOURS), sessionMasterSystemUUID);
+		classification.get()
+		              .expire(Duration.of(2, HOURS), this.identityToken);
+		classification1.get()
+		               .expire(Duration.of(2, HOURS), this.identityToken);
 		
 		UserConfirmationKeyDTO<?> confirmationKeyDTO = new UserConfirmationKeyDTO<>()
 				.setWebClientUUID(userRegistrationDTO.getWebClientUUID())
 				.setIdentityToken(newIp.getId());
 		confirmationKeyDTO.setConfirmationKey(UUID.randomUUID());
 		IRelationshipValue<?, IClassification<?, ?>, ?> x =
-				newIp.addOrUpdateClassification(ConfirmationKey, null, confirmationKeyDTO.getConfirmationKey().toString(), sessionMasterSystem, sessionMasterSystemUUID);
+				newIp.addOrUpdateClassification(ConfirmationKey, null, confirmationKeyDTO.getConfirmationKey()
+				                                                                         .toString(), system, this.identityToken);
 		
-		x.expire(Duration.of(2, HOURS), sessionMasterSystemUUID);
-		
-		//	registerEvent.addInvolvedParty(ConfirmationKey, sessionMasterSystem, confirmationKeyDTO.getConfirmationKey()
-		//	                                                                                       .toString(), sessionMasterSystemUUID);
-		
+		x.expire(Duration.of(2, HOURS), this.identityToken);
 		return confirmationKeyDTO;
 	}
 	
 	
-	@Override
-	public ProfileServiceDTO<?> logoutUser(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
+	IInvolvedParty<?, ?> createDeviceIP(ProfileServiceDTO<?> profileServiceDTO)
 	{
-		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
+		IInvolvedPartyType<?, ?> deviceType = involvedPartyService.findType(TypeDevice.toString(), system.get(), identityToken);
+		
+		Pair<String, String> deviceIDType = new Pair<>();
+		String webClientUUID = profileServiceDTO.getWebClientUUID()
+		                                        .toString();
+		deviceIDType.setKey(IdentificationTypeWebClientUUID.toString())
+		            .setValue(webClientUUID);
+		
+		IInvolvedParty<?, ?> newIp = involvedPartyService.get()
+		                                                 .builder()
+		                                                 .findByType(TypeDevice.toString(), webClientUUID, system.get(), identityToken)
+		                                                 .get()
+		                                                 .orElse(null);
+		if (newIp == null)
 		{
-			identityToken = new UUID[]{sessionMasterSystemUUID};
+			newIp = involvedPartyService.create(system.get(), deviceIDType, false, identityToken);
+			newIp.addOrReuseInvolvedPartyType(NoClassification.toString(), deviceType, webClientUUID, system.get(), identityToken);
 		}
-		var idWebClient
-				= profileServiceDTO.findInvolvedParty()
-				                   .findInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(), null, sessionMasterSystem, true, true,
-						                   sessionMasterSystemUUID);
-		if (idWebClient.isPresent())
-		{
-			idWebClient.get()
-			           .archive(system, identityToken);
-		}
-		us.setRememberMe(false);
-		us.setLoggedIn(false);
-		us.setLoginExpiresOn(LocalDateTime.now());
-		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		session.removeValue("user-roles");
-		return profileServiceDTO;
-	}
-	
-	@Override
-	public ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
-	{
-		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
-		{
-			identityToken = new UUID[]{sessionMasterSystemUUID};
-		}
-		IInvolvedParty<?, ?> guestExists = dto.findInvolvedParty();// involvedPartyService.findByIdentificationType(IdentificationTypeWebClientUUID, stringStringMap.get(StaticStrings.LOCAL_STORAGE_PARAMETER_KEY), sessionMasterSystem, identityToken);
-		final UUID[] identityToken1Final = identityToken;
-		//	IEventService<?> eventService = get(IEventService.class);
-		//	IEvent<?,?> event = eventService.createEvent(ProfileEventTypes.SiteVisit, sessionMasterSystem, sessionMasterSystemUUID);
-		
-		IInvolvedParty<?, ?> newIp = null;
-		if (guestExists == null)
-		{
-			newIp = createNewVisitor(profileServiceDTO, enterprise, sessionMasterSystem, sessionMasterSystemUUID);
-		}
-		else
-		{
-			//Otherwise guess
-			if (profileServiceDTO instanceof UserLoginDTO)
-			{
-				UserLoginDTO<?> userDTO = (UserLoginDTO<?>) profileServiceDTO;
-				newIp = passwordsService.findByUsernameAndPassword(userDTO.getUserName()
-						, userDTO.getPassword()
-						, sessionMasterSystem
-						, true
-						, identityToken);
-			}
-			else
-			{
-				newIp = guestExists;
-			}
-		}
-		
-		session.setInvolvedParty(newIp);
-		sessionMasterService.updateSession(newIp, session, sessionMasterSystem, sessionMasterSystemUUID);
-		newIp = updateLatestVisit(profileServiceDTO, enterprise, newIp, identityToken);
-		try
-		{
-			HttpServletRequest request = get(GuicedServletKeys.getHttpServletRequestKey());
-			newIp = configureFromHTTPServletRequest(profileServiceDTO, newIp, sessionMasterSystem, request, enterprise);
-			configureFromReadableUserAgent(profileServiceDTO, newIp, get(ReadableUserAgent.class), sessionMasterSystem, enterprise, identityToken1Final);
-		}
-		catch (Throwable T)
-		{
-			log.log(Level.FINER, "Unable to log servlet request information", T);
-		}
-		
-		if (guestExists != null && !guestExists.equals(newIp))
-		{
-			var idWebClient=
-					guestExists.findInvolvedPartyIdentificationType(NoClassification,IdentificationTypeWebClientUUID,null, sessionMasterSystem,true,true, sessionMasterSystemUUID);
-			if (idWebClient.isPresent())
-			{
-				idWebClient.get()
-				           .expire();
-				newIp.addInvolvedPartyIdentificationType(NoClassification.toString(),IdentificationTypeWebClientUUID.toString(), idWebClient.get()
-				                                                                                     .getValue(), sessionMasterSystem, sessionMasterSystemUUID);
-			}
-		}
-		profileServiceDTO.setInvolvedParty(newIp);
-		session.setSystem(system);
-		session.setInvolvedParty(newIp);
-		
-		Set<String> roles = new TreeSet<>();
-		session.setInvolvedParty(newIp);
-		/*UserSecurityDTO us;
-		if (session.hasValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME))
-		{
-			us = session.as(UserSecurityDTO.USER_SECURITY_SESSION_NAME, UserSecurityDTO.class);
-		}
-		else
-		{
-			us = new UserSecurityDTO();
-			session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		}*/
-		
-		if (us.isLoggedIn())
-		{
-			//setUserLoggedIn(newIp, profileServiceDTO, us.isRememberMe(), system, identityToken);
-			roles.addAll(rolesService.getRoles(session.getInvolvedParty(), sessionMasterSystem, sessionMasterSystemUUID));
-		}
-		else
-		{
-			roles.addAll(Set.of(Visitor.toString()));
-		}
-		
-		session.setSystem(system);
-		session.addValue("user-roles", roles);
-		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		sessionMasterService.updateSession(newIp, session, sessionMasterSystem, sessionMasterSystemUUID);
-		
-		return profileServiceDTO;
-	}
-	
-	IInvolvedParty<?, ?> createNewVisitor(ProfileServiceDTO<?> profileServiceDTO, IEnterprise<?, ?> enterprise, ISystems<?, ?> sessionMasterSystem, UUID... identityToken)
-	{
-		IInvolvedParty<?, ?> newIp;
-		//Create new guest record
-		Pair<String, String> guestIDType = new Pair<>();
-		guestIDType.setKey(IdentificationTypeWebClientUUID.toString())
-		           .setValue(profileServiceDTO.getWebClientUUID()
-		                                      .toString());
-		
-		newIp = involvedPartyService.create(sessionMasterSystem, guestIDType, true, identityToken);
-		
-		ISecurityToken<?, ?> visitorsGroup = securityTokenService.getVisitorsGuestsFolder(sessionMasterSystem, identityToken);
-		
-		ISecurityToken<?, ?> myToken = securityTokenService.create(Identity.toString(),
-				profileServiceDTO.getWebClientUUID()
-				                 .toString(),
-				"A new visitor device",
-				sessionMasterSystem,
-				visitorsGroup,
-				identityToken);
-		newIp.addOrUpdateInvolvedPartyIdentificationType(NoClassification.toString(),IdentificationTypeUUID.toString(),myToken.getSecurityToken(),
-				myToken.getSecurityToken(), sessionMasterSystem, identityToken);
-		
-		profileServiceDTO.setIdentityToken(newIp.getId());
-		
-		UpdateNewVisitEvent visitEvent = get(UpdateNewVisitEvent.class);
-		visitEvent.setEnterprise(enterprise)
-		          .setProfileServiceDTO(profileServiceDTO)
-		          .setIdentityToken(new UUID[]{newIp.getId()})
-		          .setNewIp(newIp);
-		
-		
-		rolesService.addRole(newIp, Visitor.toString(), profileServiceDTO, sessionMasterSystem, sessionMasterSystemUUID);
-		
-		JobService.getInstance()
-		          .addJob(UpdateNewVisitEvent.getJobServiceName(), visitEvent);
-		
 		return newIp;
 	}
 	
-	IInvolvedParty<?, ?> updateLatestVisit(ProfileServiceDTO<?> profileServiceDTO, IEnterprise<?, ?> enterprise, IInvolvedParty<?, ?> newIp,
+	IInvolvedParty<?, ?> updateLatestVisit(IInvolvedParty<?, ?> newIp,
 	                                       UUID... identityToken)
 	{
-		UpdateLastVisitEvent req = get(UpdateLastVisitEvent.class);
-		req
-				//.setEvent(event)
-				.setProfileServiceDTO(profileServiceDTO)
-				.setEnterprise(enterprise)
-				.setNewIp(newIp)
-				.setIdentityToken(identityToken);
-		
-		JobService.getInstance()
-		          .addJob(UpdateLastVisitEvent.getJobServiceName(), req);
-		
+		String lastVisit = LocalDateTimeDeserializer.formats[0].format(LocalDateTime.now());
+		newIp.addOrUpdateClassification(LastVisitTime,
+				null,
+				lastVisit,
+				system.get(),
+				identityToken);
 		return newIp;
-	}
-	
-	
-	@Override
-	public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
-	{
-		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
-		{
-			identityToken = new UUID[]{sessionMasterSystemUUID};
-		}
-		IInvolvedParty<?, ?> currentIp = session.getInvolvedParty();
-		
-		IInvolvedParty<?, ?> newIp = null;
-		try
-		{
-			IInvolvedParty<?, ?> foundParty = passwordsService.findByUsernameAndPassword(profileServiceDTO.getUserName(),
-					profileServiceDTO.getPassword(),
-					sessionMasterSystem,
-					true,
-					sessionMasterSystemUUID);
-			profileServiceDTO.setIdentityToken(foundParty.getId());
-			newIp = foundParty;
-			
-			if (currentIp != null && !currentIp.equals(newIp))
-			{
-				var idWebClient
-						= currentIp.findInvolvedPartyIdentificationType(NoClassification.toString(),IdentificationTypeWebClientUUID.toString(), null,sessionMasterSystem,true,true,
-						sessionMasterSystemUUID);
-				
-				if (idWebClient.isPresent() &&
-				    !currentIp.getId()
-				              .equals(newIp.getId()))
-				{
-					sessionMasterService.expireSession(currentIp, session, system, sessionMasterSystemUUID);
-					idWebClient.get()
-					           .archive(system,identityToken);
-					newIp.addInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(), idWebClient.get()
-					                                                                                                                             .getValue(), system, identityToken);
-				}
-			}
-			setUserLoggedIn(newIp, profileServiceDTO, profileServiceDTO.isRememberMe(), system, sessionMasterSystemUUID);
-		}
-		catch (SecurityAccessException e)
-		{
-			throw new ProfileServiceException("Invalid username or password");
-		}
-		profileServiceDTO.setPassword(null);
-		return profileServiceDTO;
-	}
-	
-	private void setUserLoggedIn(IInvolvedParty<?, ?> newIp, ProfileServiceDTO<?> profileServiceDTO, boolean rememberMe, ISystems<?, ?> system, UUID... identityToken)
-	{
-		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
-		{
-			identityToken = new UUID[]{sessionMasterSystemUUID};
-		}
-		session.setInvolvedParty(newIp);
-		
-		dto.setWebClientUUID(profileServiceDTO.getWebClientUUID());
-		dto.setIdentityToken(profileServiceDTO.getIdentityToken());
-		dto.setEnterprise(system.getEnterprise());
-		session.addValue(IDENTITY_SESSION_NAME, dto);
-		
-		/*UserSecurityDTO us = null;
-		if (session.hasValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME))
-		{
-			us = session.as(UserSecurityDTO.USER_SECURITY_SESSION_NAME, UserSecurityDTO.class);
-		}
-		else
-		{
-			session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us = new UserSecurityDTO());
-		}*/
-		us = us.setLoggedIn(true)
-		       .setLoginExpiresOn(rememberMe
-				       ? LocalDateTime.MAX
-				       : LocalDateTime.now()
-				                      .plusMinutes(20))
-		       .setRememberMe(rememberMe);
-		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		Set<String> roles = rolesService.getRoles(newIp, sessionMasterSystem, sessionMasterSystemUUID);
-		session.addValue("user-roles", roles);
-		
-		dto.setEnterprise(enterprise);
-		dto.setInvolvedParty(newIp);
 	}
 	
 	
@@ -432,7 +467,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			throw new ProfileServiceException("Passwords cannot be empty");
 		}
 		
-		IInvolvedParty<?, ?> ip = passwordsService.findByUsernameAndPassword(userLoginDTO.getUserName(), userLoginDTO.getPassword(), sessionMasterSystem, true, identityToken);
+		IInvolvedParty<?, ?> ip = passwordsService.findByUsernameAndPassword(userLoginDTO.getUserName(), userLoginDTO.getPassword(), system.get(), true, identityToken);
 		userLoginDTO = new UserLoginDTO<>().setIdentityToken(ip.getId());
 		return userLoginDTO;
 	}
@@ -440,36 +475,63 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	
 	IInvolvedParty<?, ?> configureFromHTTPServletRequest(UserDTO<?> dto, IInvolvedParty<?, ?> ip, ISystems<?, ?> profileSystem, HttpServletRequest servletRequest, IEnterprise<?, ?> enterprise)
 	{
-		ConfigureFromServletRequestEvent req = get(ConfigureFromServletRequestEvent.class);
-		req
-				//.setEvent(event)
-				.setDto(dto)
-				.setIp(ip)
-				.setProfileSystem(profileSystem)
-				.setServletRequest(servletRequest)
-				.setEnterprise(enterprise);
-		JobService.getInstance()
-		          .addJob(ConfigureFromServletRequestEvent.getJobServiceName(), req);
+		StringBuilder sb = new StringBuilder();
+		Enumeration<String> headerNames = servletRequest.getHeaderNames();
+		while (headerNames.hasMoreElements())
+		{
+			String h = headerNames.nextElement();
+			String v = servletRequest.getHeader(h);
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put(h, v);
+			sb.append(jsonObject);
+		}
 		
+		IAddressService<?> addressService = GuiceContext.get(IAddressService.class);
+		String ipReal = servletRequest.getRemoteAddr();
+		if (ipReal.equalsIgnoreCase("0:0:0:0:0:0:0:1"))
+		{
+			InetAddress inetAddress = null;
+			try
+			{
+				inetAddress = InetAddress.getLocalHost();
+			}
+			catch (UnknownHostException e)
+			{
+				LogFactory.getLog("ConfigureFromServletRequest")
+				          .log(Level.SEVERE, "Unknown host in getting INet Address for localhost ipv6", e);
+			}
+			String ipAddress = inetAddress.getHostAddress();
+			ipReal = ipAddress;
+		}
+		IAddress<?, ?> ipAddress = addressService.addOrFindIPAddress(ipReal, profileSystem, identityToken);
+		ip.addOrReuseAddress(ipAddress, RemoteAddressIPAddress.toString(), ipReal, ipReal, profileSystem, identityToken);
+		IAddress<?, ?> hostName = addressService.addOrFindHostName(servletRequest.getRemoteHost(), profileSystem, identityToken);
+		ip.addOrReuseAddress(hostName, RemoteAddressHostName.toString(), servletRequest.getRemoteHost(), servletRequest.getRemoteHost(), profileSystem, identityToken);
+		IAddress<?, ?> localIpAddress = addressService.addOrFindHostName(servletRequest.getLocalAddr(), profileSystem, identityToken);
+		ip.addOrReuseAddress(localIpAddress, LocalAddressIPAddress.toString(), servletRequest.getLocalAddr(), servletRequest.getLocalAddr(), profileSystem, identityToken);
+		IAddress<?, ?> localHostName = addressService.addOrFindHostName(servletRequest.getLocalName(), profileSystem, identityToken);
+		ip.addOrReuseAddress(localHostName, LocalAddressHostName.toString(), servletRequest.getLocalName(), servletRequest.getLocalName(), profileSystem, identityToken);
+		IAddress<?, ?> webAddress = addressService.addOrFindWebAddress(servletRequest.getRequestURL()
+		                                                                             .toString(), profileSystem, identityToken);
+		ip.addOrReuseAddress(webAddress, WebAddress.toString(), servletRequest.getRequestURL()
+		                                                                      .toString(), servletRequest.getRequestURL()
+		                                                                                                 .toString(), profileSystem, identityToken);
 		return ip;
 	}
 	
-	IInvolvedParty<?, ?> configureFromReadableUserAgent(UserDTO<?> dto, IInvolvedParty<?, ?> ip, ReadableUserAgent readableUserAgent, ISystems<?, ?> profileSystem, IEnterprise<?, ?> enterprise, UUID... identityToken)
+	IInvolvedParty<?, ?> configureFromReadableUserAgent(IInvolvedParty<?, ?> ip, ReadableUserAgent readableUserAgent, ISystems<?, ?> profileSystem, UUID... identityToken)
 	{
-		ConfigureFromReadableUserAgentEvent ev = get(ConfigureFromReadableUserAgentEvent.class);
-		ev.setEnterprise(enterprise)
-		  //  .setEvent(event)
-		  .setDto(dto)
-		  .setIdentityToken(identityToken)
-		  .setIp(ip)
-		  .setReadableUserAgent(readableUserAgent)
-		  .setProfileSystem(profileSystem);
-		
-		JobService.getInstance()
-		          .addJob(ConfigureFromReadableUserAgentEvent.getJobServiceName(), ev);
-		
+		ip.addOrReuseClassification(BrowserDeviceCategory, readableUserAgent.getDeviceCategory()
+		                                                                    .getName(), profileSystem, identityToken);
+		ip.addOrReuseClassification(BrowserDevice, readableUserAgent.getDeviceCategory()
+		                                                            .getCategory()
+		                                                            .getName(), profileSystem, identityToken);
+		ip.addOrReuseClassification(OperatingSystem, readableUserAgent.getOperatingSystem()
+		                                                              .getName(), profileSystem, identityToken);
+		ip.addOrReuseClassification(OperatingSystemFamily, readableUserAgent.getOperatingSystem()
+		                                                                    .getFamily()
+		                                                                    .getName(), profileSystem, identityToken);
 		return ip;
 	}
-	
 	
 }

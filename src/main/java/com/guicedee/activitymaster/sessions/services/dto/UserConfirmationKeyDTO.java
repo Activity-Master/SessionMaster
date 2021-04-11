@@ -3,7 +3,6 @@ package com.guicedee.activitymaster.sessions.services.dto;
 import com.fasterxml.jackson.annotation.*;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 import java.util.UUID;
 
