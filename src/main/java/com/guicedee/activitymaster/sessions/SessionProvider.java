@@ -9,7 +9,6 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.syste
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.guicedinjection.GuiceContext;
-import com.guicedee.guicedservlets.services.scopes.CallScope;
 import lombok.extern.java.Log;
 
 import java.util.UUID;
@@ -18,7 +17,6 @@ import java.util.logging.Level;
 import static com.guicedee.activitymaster.sessions.services.ISessionMasterService.*;
 
 @Log
-@CallScope
 public class SessionProvider
 		implements Provider<ISession<Session>>
 {

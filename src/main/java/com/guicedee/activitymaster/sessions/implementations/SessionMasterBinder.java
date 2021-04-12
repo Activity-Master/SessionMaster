@@ -7,7 +7,6 @@ import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
 import com.guicedee.guicedinjection.interfaces.IGuiceModule;
 import com.guicedee.guicedservlets.services.scopes.CallScope;
-import com.guicedee.activitymaster.sessions.*;
 
 public class SessionMasterBinder
 		extends PrivateModule
@@ -37,9 +36,9 @@ public class SessionMasterBinder
 		Key<ISession<Session>> realKeySession
 				= Key.get(new TypeLiteral<ISession<Session>>() {});
 		
-		bind(genericKeySession).to(realKeySession);
-		bind(realKeySession).toProvider(SessionProvider.class);
-		bind(ISession.class).to(genericKeySession);
+		bind(genericKeySession).to(realKeySession).in(CallScope.class);
+		bind(realKeySession).toProvider(SessionProvider.class).in(CallScope.class);
+		bind(ISession.class).to(genericKeySession).in(CallScope.class);
 		
 		expose(genericKeySession);
 		expose(ISession.class);

@@ -2,14 +2,18 @@ package com.guicedee.activitymaster.sessions.services;
 
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.guicedinjection.representations.IJsonRepresentation;
 
 import java.io.Serializable;
+import java.util.Map;
 
 
 @SuppressWarnings("UnusedReturnValue")
 public interface ISession<J extends ISession<J>>
-		extends Serializable
+		extends Serializable, IJsonRepresentation<J>
 {
+	void clear();
+	
 	/**
 	 * Adds a given value to the session
 	 *
@@ -40,4 +44,6 @@ public interface ISession<J extends ISession<J>>
 	ISystems<?,?> getSystem();
 	
 	ISession<?> setSystem(ISystems<?,?> system);
+	
+	Map<String, String> getValues();
 }

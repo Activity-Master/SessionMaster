@@ -3,11 +3,12 @@ package com.guicedee.activitymaster.sessions.services.dto;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.guicedinjection.json.LocalDateTimeDeserializer;
 import com.guicedee.guicedinjection.json.LocalDateTimeSerializer;
+import com.guicedee.guicedinjection.representations.IJsonRepresentation;
 import com.guicedee.guicedservlets.services.scopes.CallScope;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -23,7 +24,7 @@ import static com.guicedee.guicedinjection.GuiceContext.*;
                 setterVisibility = NONE)
 @CallScope
 public class UserSecurityDTO
-		implements Serializable
+		implements Serializable, IJsonRepresentation<UserSecurityDTO>
 {
 	@Serial
 	private static final long serialVersionUID = 1L;

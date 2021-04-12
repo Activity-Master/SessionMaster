@@ -53,6 +53,12 @@ public class Session
 		}
 	}
 	
+	@Override
+	public void clear()
+	{
+		values.clear();
+	}
+	
 	@SneakyThrows
 	@Override
 	public ISession<?> addValue(String key, Object object)
@@ -158,6 +164,7 @@ public class Session
 		return this;
 	}
 	
+	@Override
 	public Map<String, String> getValues()
 	{
 		return values;

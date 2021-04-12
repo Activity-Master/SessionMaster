@@ -149,7 +149,7 @@ public class SessionMasterService
 
 	@Override
 	@CacheResult(cacheName = "SessionsCache",skipGet = true)
-	public ISession<?> updateSession(@CacheKey IInvolvedParty<?,?> involvedParty, ISession<?> session,@CacheKey ISystems<?,?> system, UUID... identityToken)
+	public ISession<?> updateSession(@CacheKey IInvolvedParty<?,?> involvedParty, ISession<?> session,ISystems<?,?> system, UUID... identityToken)
 	{
 		try
 		{

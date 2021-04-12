@@ -1,6 +1,7 @@
 package com.guicedee.activitymaster.sessions.services;
 
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.profiles.exceptions.*;
@@ -22,6 +23,16 @@ public interface ISessionLoginService<J extends ISessionLoginService<J>>
 	 * @throws ProfileServiceException
 	 */
 	ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException;
+
+	void setUserLoggedIn(IInvolvedParty<?, ?> newIp,
+	                    ProfileServiceDTO<?> profileServiceDTO,
+	                     boolean rememberMe,
+	                     ISystems<?, ?> system, UUID... identityToken);
+	
+	void setUserLoggedOut(IInvolvedParty<?, ?> involvedParty,
+	                      IInvolvedParty<?, ?> deviceIP,
+	                      ProfileServiceDTO<?> profileServiceDTO,
+	                      ISystems<?, ?> system, UUID... identityToken);
 	
 	/**
 	 * Creates a confirmation key that expires after two hours to a page link that will authenticate the request
