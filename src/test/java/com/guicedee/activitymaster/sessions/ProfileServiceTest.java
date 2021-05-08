@@ -2,9 +2,9 @@ package com.guicedee.activitymaster.sessions;
 
 import com.google.common.base.Stopwatch;
 import com.guicedee.activitymaster.fsdm.client.services.IEnterpriseService;
+import com.guicedee.activitymaster.fsdm.client.services.administration.ActivityMasterConfiguration;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.fsdm.client.services.administration.ActivityMasterConfiguration;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 import com.guicedee.guicedinjection.interfaces.JobService;
@@ -30,7 +30,7 @@ class ProfileServiceTest
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		log.info("Started creating guest");
 		IEnterprise<?,?> enterprise = get(IEnterpriseService.class)
-				                            .getEnterprise(get(ActivityMasterConfiguration.class).getEnterpriseName());
+				                            .getEnterprise(get(ActivityMasterConfiguration.class).getApplicationEnterpriseName());
 
 		UserLoginDTO<?> newGuest = new UserLoginDTO<>().setWebClientUUID(UUID.randomUUID());
 		//newGuest.setReadableUserAgent()

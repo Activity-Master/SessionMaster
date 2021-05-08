@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Strings;
 import com.guicedee.activitymaster.fsdm.client.services.IRelationshipValue;
 import com.guicedee.activitymaster.fsdm.client.services.IResourceItemService;
+import com.guicedee.activitymaster.fsdm.client.services.annotations.ActivityMasterDB;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceItem;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
@@ -14,6 +15,7 @@ import com.guicedee.activitymaster.sessions.services.ISession;
 import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.guicedinjection.GuiceContext;
+import com.guicedee.guicedpersistence.db.annotations.Transactional;
 import com.guicedee.logger.LogFactory;
 import jakarta.cache.annotation.CacheKey;
 import jakarta.cache.annotation.CacheResult;
@@ -61,10 +63,7 @@ public class SessionMasterService
 			Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem = involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(),null, system,false,false, identityToken);
 			if(resourceItem.isEmpty())
 			{
-				var newResource =
-						resourceItemService.create(JsonPacket.toString(), "application/json", system, identityToken);
-				newResource.updateData(sessionString.getBytes(),system,identityToken);
-				resourceItem = Optional.of(involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), newResource, STRING_EMPTY, system, identityToken));
+				resourceItem = saveNewSessionResourceItem(involvedParty, system, sessionString, resourceItemService, identityToken);
 			}
 			String currentSessionValue = new String(resourceItem.get().getSecondary().getData());
 			
@@ -74,7 +73,7 @@ public class SessionMasterService
 			}
 			else
 			{
-				currentSessionValue = "{}";
+				sessionString = "{}";
 			}
 
 			HashMap<String, String> returned = new HashMap<>();
@@ -106,6 +105,17 @@ public class SessionMasterService
 			session.setInvolvedParty(involvedParty);
 		}
 		return session;
+	}
+	
+	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> saveNewSessionResourceItem(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, String sessionString, IResourceItemService<?> resourceItemService, UUID[] identityToken)
+	{
+		Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem;
+		var newResource =
+				resourceItemService.create(JsonPacket.toString(), "application/json", system, identityToken);
+		newResource.updateData(sessionString.getBytes(), system, identityToken);
+		resourceItem = Optional.of(involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), newResource, STRING_EMPTY, system, identityToken));
+		return resourceItem;
 	}
 	
 	@Override
@@ -183,7 +193,7 @@ public class SessionMasterService
 		catch (IOException e)
 		{
 			LogFactory.getLog("SessionMasterService")
-			          .log(Level.SEVERE, "Error serializing the inecoming object to retrieve a session", e);
+			          .log(Level.SEVERE, "Error serializing the incoming object to retrieve a session", e);
 		}
 		if (session != null)
 		{
