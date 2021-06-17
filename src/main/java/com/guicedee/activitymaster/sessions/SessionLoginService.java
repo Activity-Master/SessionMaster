@@ -2,6 +2,7 @@ package com.guicedee.activitymaster.sessions;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.guicedee.activitymaster.fsdm.client.services.*;
 import com.guicedee.activitymaster.fsdm.client.services.annotations.*;
@@ -81,7 +82,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	
 	@Inject
 	@Named(SessionMasterSystemName)
-	private ISystems<?, ?> system;
+	private Provider<ISystems<?, ?>> system;
 	
 	@Inject
 	@Named(SessionMasterSystemName)
@@ -91,10 +92,10 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	private ProfileServiceDTO<?> dto;
 	
 	@Inject
-	private ISession<?> session;
+	private Provider<ISession<?>> session;
 	
 	@Inject
-	private UserSecurityDTO us;
+	private Provider<UserSecurityDTO> us;
 	
 	@Override
 	public ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
@@ -181,7 +182,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	{
 		return passwordsService.findByUsernameAndPassword(loginDTO.getUserName(),
 				loginDTO.getPassword(),
-				system,
+				system.get(),
 				true,
 				identityToken);
 	}
@@ -301,11 +302,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		profileServiceDTO.setInvolvedParty(newIp);
 		profileServiceDTO.setIdentityToken(newIp.getId());
 		
-		session.setInvolvedParty(newIp);
+		session.get().setInvolvedParty(newIp);
 		ISession<?> session = sessionMasterService.getSession(newIp, system, identityToken);
 		
-		this.session.clear();
-		this.session.updateFrom(session);
+		this.session.get().clear();
+		this.session.get().updateFrom(session);
 
 		dto.setEnterprise(enterprise);
 		dto.setInvolvedParty(newIp);
@@ -315,7 +316,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		dto.updateFrom(profileServiceDTO);
 		
-		this.session.addValue(IDENTITY_SESSION_NAME, dto);
+		this.session.get().addValue(IDENTITY_SESSION_NAME, dto);
 		UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
 		us.setLoggedIn(true)
 		  .setLoginExpiresOn(rememberMe
@@ -323,11 +324,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 				  : LocalDateTime.now()
 				                 .plusMinutes(20))
 		  .setRememberMe(rememberMe);
-		this.us.updateFrom(us);
-		this.session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		this.session.addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(newIp, system, identityToken));
+		this.us.get().updateFrom(us);
+		this.session.get().addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
+		this.session.get().addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(newIp, system, identityToken));
 		
-		sessionMasterService.updateSession(newIp, this.session, system, identityToken);
+		sessionMasterService.updateSession(newIp, this.session.get(), system, identityToken);
 	}
 	
 	@InvolvedPartyEvent(value = Added)
@@ -338,23 +339,23 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	                             @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
 	                             @Party("SystemPerformed") ISystems<?, ?> system, UUID... identityToken)
 	{
-		us.setRememberMe(false);
-		us.setLoggedIn(false);
-		us.setLoginExpiresOn(LocalDateTime.now());
-		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		session.removeValue(USER_ROLES_SESSION_NAME);
-		sessionMasterService.updateSession(involvedParty, session, system, identityToken);
+		us.get().setRememberMe(false);
+		us.get().setLoggedIn(false);
+		us.get().setLoginExpiresOn(LocalDateTime.now());
+		session.get().addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
+		session.get().removeValue(USER_ROLES_SESSION_NAME);
+		sessionMasterService.updateSession(involvedParty, session.get(), system, identityToken);
 		
 		//set profile service dto to the device IP
 		profileServiceDTO.setIdentityToken(deviceIP.getId());
 		profileServiceDTO.setInvolvedParty(deviceIP);
 		ISession<?> session = sessionMasterService.getSession(deviceIP, system, identityToken);
-		this.session.setInvolvedParty(deviceIP);
-		this.session.setSystem(system);
-		this.session.clear();
-		this.session.updateFrom(session);
+		this.session.get().setInvolvedParty(deviceIP);
+		this.session.get().setSystem(system);
+		this.session.get().clear();
+		this.session.get().updateFrom(session);
 		
-		sessionMasterService.updateSession(deviceIP, this.session, system, identityToken);
+		sessionMasterService.updateSession(deviceIP, this.session.get(), system, identityToken);
 	}
 	
 	@Override
@@ -426,10 +427,10 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	{
 		String webClientUUID = profileServiceDTO.getWebClientUUID()
 		                                        .toString();
-		IInvolvedPartyType<?, ?> deviceType = involvedPartyService.findType(TypeDevice.toString(), system, identityToken);
+		IInvolvedPartyType<?, ?> deviceType = involvedPartyService.findType(TypeDevice.toString(), system.get(), identityToken);
 		IInvolvedParty<?, ?> newIp = involvedPartyService.get()
 		                                                 .builder()
-		                                                 .findByTypeAll(TypeDevice.toString(),  webClientUUID, system, identityToken)
+		                                                 .findByTypeAll(TypeDevice.toString(),  webClientUUID, system.get(), identityToken)
 		                                                 .latestFirst()
 		                                                 .setMaxResults(1)
 		                                                 .get()
@@ -439,8 +440,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			Pair<String, String> deviceIDType = new Pair<>();
 			deviceIDType.setKey(IdentificationTypeWebClientUUID.toString())
 			            .setValue(webClientUUID);
-			newIp = involvedPartyService.create(system, deviceIDType, false, identityToken);
-			newIp.addOrReuseInvolvedPartyType(NoClassification.toString(), deviceType, webClientUUID, system, identityToken);
+			newIp = involvedPartyService.create(system.get(), deviceIDType, false, identityToken);
+			newIp.addOrReuseInvolvedPartyType(NoClassification.toString(), deviceType, webClientUUID, system.get(), identityToken);
 		}
 		return newIp;
 	}
@@ -452,7 +453,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		newIp.addOrUpdateClassification(LastVisitTime,
 				null,
 				lastVisit,
-				system,
+				system.get(),
 				identityToken);
 		return newIp;
 	}
@@ -480,7 +481,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			throw new ProfileServiceException("Passwords cannot be empty");
 		}
 		
-		IInvolvedParty<?, ?> ip = passwordsService.findByUsernameAndPassword(userLoginDTO.getUserName(), userLoginDTO.getPassword(), system, true, identityToken);
+		IInvolvedParty<?, ?> ip = passwordsService.findByUsernameAndPassword(userLoginDTO.getUserName(), userLoginDTO.getPassword(),
+				system.get(), true, identityToken);
 		userLoginDTO = new UserLoginDTO<>().setIdentityToken(ip.getId());
 		return userLoginDTO;
 	}
