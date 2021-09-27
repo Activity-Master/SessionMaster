@@ -42,11 +42,18 @@ module com.guicedee.activitymaster.sessions {
 	provides com.guicedee.guicedinjection.interfaces.IGuiceScanModuleInclusions with SessionsModuleInclusion;
 	provides IOnCallScopeExit with CallScopeOnExitSessionPersist;
 	
+	exports com.guicedee.activitymaster.sessions;
 	opens com.guicedee.activitymaster.sessions to com.google.guice, com.fasterxml.jackson.databind;
 	opens com.guicedee.activitymaster.sessions.services.dto to com.google.guice, com.fasterxml.jackson.databind;
+	
+	exports com.guicedee.activitymaster.sessions.implementations;
 	opens com.guicedee.activitymaster.sessions.implementations to com.google.guice;
+	exports com.guicedee.activitymaster.sessions.implementations.providers;
 	opens com.guicedee.activitymaster.sessions.implementations.providers to com.google.guice;
+	
+	exports com.guicedee.activitymaster.sessions.implementations.updates to com.google.guice;
 	opens com.guicedee.activitymaster.sessions.implementations.updates to com.google.guice;
+	
 	opens com.guicedee.activitymaster.sessions.services to com.google.guice;
 	
 }
