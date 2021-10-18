@@ -36,7 +36,7 @@ public class UserSecurityDTO
 	private String lastIpAddress;
 	@JsonDeserialize(using = LocalDateTimeDeserializer.class)
 	@JsonSerialize(using = LocalDateTimeSerializer.class)
-	private LocalDateTime loginExpiresOn = LocalDateTime.now()
+	private LocalDateTime loginExpiresOn = com.entityassist.RootEntity.getNow()
 	                                                    .plusMinutes(20);
 	
 	public UserSecurityDTO()
@@ -103,7 +103,7 @@ public class UserSecurityDTO
 		if (us == null ||
 		    us.getLoginExpiresOn() == null ||
 		    us.getLoginExpiresOn()
-		      .isBefore(LocalDateTime.now()))
+		      .isBefore(com.entityassist.RootEntity.getNow()))
 		{
 			return false;
 		}

@@ -11,7 +11,6 @@ import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedpersistence.db.annotations.Transactional;
 import com.guicedee.guicedservlets.services.IOnCallScopeExit;
 
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 import static com.guicedee.activitymaster.sessions.services.ISessionMasterService.*;
@@ -37,7 +36,7 @@ public class CallScopeOnExitSessionPersist implements IOnCallScopeExit<CallScope
 			UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
 			if (us.isLoggedIn())
 			{
-				us.setLoginExpiresOn(LocalDateTime.now()
+				us.setLoginExpiresOn(com.entityassist.RootEntity.getNow()
 				                                  .plus(20, ChronoUnit.MINUTES));
 			}
 			service.updateSession(session.getInvolvedParty(), session, system);

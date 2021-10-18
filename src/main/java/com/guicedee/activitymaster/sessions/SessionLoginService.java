@@ -151,7 +151,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		if (us.isLoggedIn())
 		{
 			if (!us.getLoginExpiresOn()
-					.isBefore(LocalDateTime.now()))
+					.isBefore(com.entityassist.RootEntity.getNow()))
 			{
 				//fetch sync ip and compare for logout?
 				
@@ -321,7 +321,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		us.setLoggedIn(true)
 		  .setLoginExpiresOn(rememberMe
 				  ? LocalDateTime.MAX
-				  : LocalDateTime.now()
+				  : com.entityassist.RootEntity.getNow()
 				                 .plusMinutes(20))
 		  .setRememberMe(rememberMe);
 		this.us.get().updateFrom(us);
@@ -341,7 +341,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	{
 		us.get().setRememberMe(false);
 		us.get().setLoggedIn(false);
-		us.get().setLoginExpiresOn(LocalDateTime.now());
+		us.get().setLoginExpiresOn(com.entityassist.RootEntity.getNow());
 		session.get().addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
 		session.get().removeValue(USER_ROLES_SESSION_NAME);
 		sessionMasterService.updateSession(involvedParty, session.get(), system, identityToken);
@@ -449,7 +449,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	IInvolvedParty<?, ?> updateLatestVisit(IInvolvedParty<?, ?> newIp,
 	                                       UUID... identityToken)
 	{
-		String lastVisit = LocalDateTimeDeserializer.formats[0].format(LocalDateTime.now());
+		String lastVisit = LocalDateTimeDeserializer.formats[0].format(com.entityassist.RootEntity.getNow());
 		newIp.addOrUpdateClassification(LastVisitTime,
 				null,
 				lastVisit,
