@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.sessions.services.ISession;
+import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.logger.LogFactory;
 import jakarta.cache.annotation.CacheKey;
 import lombok.SneakyThrows;
@@ -23,8 +23,8 @@ import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Session
-		implements ISession<Session>
+public class UserSession
+		implements IUserSession<UserSession>
 {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -35,6 +35,9 @@ public class Session
 	
 	private IInvolvedParty<?,?> involvedParty;
 	private ISystems<?,?> system;
+	
+	private UUID resourceItemID;
+	private UUID dataID;
 	
 	@Override
 	public String toString()
@@ -61,7 +64,7 @@ public class Session
 	
 	@SneakyThrows
 	@Override
-	public ISession<?> addValue(String key, Object object)
+	public IUserSession<?> addValue(String key, Object object)
 	{
 		String result;
 		if (!(object instanceof String))
@@ -91,7 +94,7 @@ public class Session
 	}
 	
 	@Override
-	public ISession<?> removeValue(@CacheKey String key)
+	public IUserSession<?> removeValue(@CacheKey String key)
 	{
 		values.remove(key);
 		return this;
@@ -126,7 +129,7 @@ public class Session
 	}
 	
 	@Override
-	public ISession<?> setInvolvedParty(IInvolvedParty<?,?> involvedParty)
+	public IUserSession<?> setInvolvedParty(IInvolvedParty<?,?> involvedParty)
 	{
 		this.involvedParty = involvedParty;
 		addValue("involved-party", involvedParty.getId()
@@ -158,7 +161,7 @@ public class Session
 	}
 	
 	@Override
-	public Session setSystem(ISystems<?,?> system)
+	public UserSession setSystem(ISystems<?,?> system)
 	{
 		this.system = system;
 		return this;
@@ -169,4 +172,29 @@ public class Session
 	{
 		return values;
 	}
+	
+	@Override
+	public UUID getResourceItemID()
+	{
+		return resourceItemID;
+	}
+	
+	@Override
+	public UserSession setResourceItemID(UUID resourceItemID)
+	{
+		this.resourceItemID = resourceItemID;
+		return this;
+	}
+	@Override
+	public UUID getDataID()
+	{
+		return dataID;
+	}
+	@Override
+	public UserSession setDataID(UUID dataID)
+	{
+		this.dataID = dataID;
+		return this;
+	}
 }
+

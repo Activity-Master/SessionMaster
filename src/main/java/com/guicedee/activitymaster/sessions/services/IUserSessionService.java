@@ -5,24 +5,26 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.syste
 
 import java.util.UUID;
 
-public interface ISessionMasterService<J extends ISessionMasterService<J>>
+public interface IUserSessionService<J extends IUserSessionService<J>>
 {
 	String SessionMasterSystemName = "Sessions Master";
+	
 	/**
 	 * Retrieves a persistant session from the UUID
 	 *
 	 * @param involvedParty The identity (IdentitifcationTypes.IdentityToken) uuid
 	 * @param identityToken The requesting tokens security token identity
-	 *
 	 * @return An ISession that is scoped
 	 */
-	ISession<?> getSession(IInvolvedParty<?,?> involvedParty, ISystems<?,?> system, UUID... identityToken);
+	IUserSession<?> getSession(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, UUID... identityToken);
 	
-	ISession<?> getSession(IInvolvedParty<?,?> involvedParty, ISession<?> original, ISystems<?,?> system, UUID... identityToken);
+	IUserSession<?> getSession(IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, UUID... identityToken);
 	
-	ISession<?> updateCache(IInvolvedParty<?, ?> involvedParty, ISession<?> original, ISystems<?, ?> system, UUID... identityToken);
+	IUserSession<?> updateCache(IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, UUID... identityToken);
 	
-	ISession<?> expireSession(IInvolvedParty<?,?> involvedParty, ISession<?> original, ISystems<?,?> system, UUID... identityToken);
+	void removeCache(IInvolvedParty<?, ?> involvedParty);
+	
+	IUserSession<?> expireSession(IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, UUID... identityToken);
 	
 	//ISession<?> createSession(IInvolvedParty<?,?> involvedParty, ISession<?> session, ISystems<?,?> system, UUID... identityToken);
 	
@@ -31,8 +33,7 @@ public interface ISessionMasterService<J extends ISessionMasterService<J>>
 	 *
 	 * @param identityToken The secuirity token doing the requesting
 	 * @param session       The session to update with
-	 *
 	 * @return The ISession
 	 */
-	ISession<?> updateSession(IInvolvedParty<?,?> involvedParty, ISession<?> session, ISystems<?,?> system, UUID... identityToken);
+	IUserSession<?> updateSession(IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, UUID... identityToken);
 }

@@ -4,18 +4,19 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.sessions.services.ISession;
-import com.guicedee.guicedinjection.json.LocalDateTimeDeserializer;
-import com.guicedee.guicedinjection.json.LocalDateTimeSerializer;
+import com.guicedee.activitymaster.sessions.services.IUserSession;
+import com.guicedee.guicedinjection.json.*;
 import com.guicedee.guicedinjection.representations.IJsonRepresentation;
 import com.guicedee.guicedservlets.services.scopes.CallScope;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
+import static java.time.temporal.ChronoUnit.*;
 
 @JsonInclude(JsonInclude.Include.ALWAYS)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -34,14 +35,29 @@ public class UserSecurityDTO
 	private boolean loggedIn;
 	private boolean rememberMe;
 	private String lastIpAddress;
+	private String lastHeader;
+	
+	@JsonDeserialize(using = StringToDurationTime.class)
+	@JsonSerialize(using = DurationToString.class)
+	private Duration sessionTimeout;
+	
 	@JsonDeserialize(using = LocalDateTimeDeserializer.class)
 	@JsonSerialize(using = LocalDateTimeSerializer.class)
-	private LocalDateTime loginExpiresOn = com.entityassist.RootEntity.getNow()
+	private LocalDateTime loginExpiresOn = LocalDateTime.now()
 	                                                    .plusMinutes(20);
 	
 	public UserSecurityDTO()
 	{
 		//No config required
+	}
+	
+	public Duration getSessionTimeout()
+	{
+		if (sessionTimeout == null)
+		{
+			sessionTimeout = Duration.of(20, MINUTES);
+		}
+		return sessionTimeout;
 	}
 	
 	public boolean isLoggedIn()
@@ -91,7 +107,7 @@ public class UserSecurityDTO
 	@JsonIgnore
 	public boolean determineIsLoggedIn(boolean asVisitor)
 	{
-		ISession<?> session = get(ISession.class);
+		IUserSession<?> session = get(IUserSession.class);
 		
 		ISystems<?, ?> system = session.getSystem();
 		if (!session.hasValue(USER_SECURITY_SESSION_NAME))
@@ -128,5 +144,16 @@ public class UserSecurityDTO
 			return loggedOn;
 		}
 		return false;
+	}
+	
+	public String getLastHeader()
+	{
+		return lastHeader;
+	}
+	
+	public UserSecurityDTO setLastHeader(String lastHeader)
+	{
+		this.lastHeader = lastHeader;
+		return this;
 	}
 }

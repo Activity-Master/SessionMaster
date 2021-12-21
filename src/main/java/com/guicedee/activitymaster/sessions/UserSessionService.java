@@ -5,18 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Strings;
+import com.google.inject.Inject;
 import com.guicedee.activitymaster.fsdm.client.services.IRelationshipValue;
 import com.guicedee.activitymaster.fsdm.client.services.IResourceItemService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceData;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceItem;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.sessions.services.ISession;
-import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
+import com.guicedee.activitymaster.fsdm.client.services.exceptions.ResourceItemException;
+import com.guicedee.activitymaster.sessions.services.IUserSession;
+import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
-import jakarta.cache.annotation.CacheKey;
-import jakarta.cache.annotation.CacheResult;
+import jakarta.cache.annotation.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -27,25 +29,27 @@ import static com.guicedee.guicedinjection.GuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 import static com.guicedee.guicedinjection.json.StaticStrings.*;
 
-public class SessionMasterService
-		implements ISessionMasterService<SessionMasterService>
+public class UserSessionService
+		implements IUserSessionService<UserSessionService>
 {
 	private final ObjectMapper mapper = GuiceContext.get(ObjectMapper.class);
 	private final TypeFactory typeFactory = mapper.getTypeFactory();
 	private final MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, String.class);
-
+	
+	@Inject
+	private IResourceItemService<?> resourceItemService;
+	
 	@Override
 	@CacheResult(cacheName = "SessionsCache")
-	public ISession<?> getSession(@CacheKey IInvolvedParty<?,?> involvedParty, ISystems<?,?> system, UUID... identityToken)
+	public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, UUID... identityToken)
 	{
-		return getSession(involvedParty, new Session(), system, identityToken);
+		return getSession(involvedParty, new UserSession(), system, identityToken);
 	}
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache")
-	public ISession<?> getSession(@CacheKey IInvolvedParty<?,?> involvedParty, ISession<?> original,ISystems<?,?> system, UUID... identityToken)
+	public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, UUID... identityToken)
 	{
-		ISession<?> session = original;
 		try
 		{
 			if (session == null && involvedParty == null)
@@ -57,13 +61,28 @@ public class SessionMasterService
 			
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
 			
-			IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
-			Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem = involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(),null, system,false,false, identityToken);
-			if(resourceItem.isEmpty())
+			Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem = involvedParty.
+					findResourceItem(SessionClassifications.SessionObject.toString(), null, system, false, false, identityToken);
+			if (resourceItem.isEmpty())
 			{
 				resourceItem = saveNewSessionResourceItem(involvedParty, system, sessionString, resourceItemService, identityToken);
 			}
-			String currentSessionValue = new String(resourceItem.get().getSecondary().getData());
+			IResourceItem<?, ?> secondary = resourceItem.get()
+			                                            .getSecondary();
+			Optional<IResourceData<?, ?>> data = secondary.getDataRow(identityToken);
+			String currentSessionValue = "";
+			if (data.isPresent())
+			{
+				currentSessionValue = new String(data.get()
+				                                     .getResourceItemData());
+			}
+			else
+			{
+				var r =
+						saveNewSessionResourceItem(involvedParty, system, "{}", resourceItemService, identityToken);
+				data = r.get().getSecondary().getDataRow();
+				//System.out.println("Creating a new user session object.....");
+			}
 			
 			if (!Strings.isNullOrEmpty(currentSessionValue))
 			{
@@ -73,16 +92,15 @@ public class SessionMasterService
 			{
 				sessionString = "{}";
 			}
-
+			
 			HashMap<String, String> returned = new HashMap<>();
 			if (!(sessionString.isEmpty() || "{}".equals(sessionString)))
 			{
 				try
 				{
 					returned = get(DefaultObjectMapper).readValue(sessionString, mapType);
-					Session sess = (Session) session;
-					sess.getValues()
-					    .putAll(returned);
+					session.getValues()
+					       .putAll(returned);
 				}
 				catch (JsonParseException ioException)
 				{
@@ -91,6 +109,10 @@ public class SessionMasterService
 					          .log(Level.FINE, "Error serializing the incoming object to retrieve a session", ioException);
 				}
 			}
+			
+			session.setResourceItemID(secondary.getId());
+			session.setDataID(data.get()
+			                      .getId());
 		}
 		catch (Exception e)
 		{
@@ -109,25 +131,35 @@ public class SessionMasterService
 	Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> saveNewSessionResourceItem(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, String sessionString, IResourceItemService<?> resourceItemService, UUID[] identityToken)
 	{
 		Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem;
+		
 		var newResource =
 				resourceItemService.create(JsonPacket.toString(), "application/json", system, identityToken);
+		
 		newResource.updateData(sessionString.getBytes(), system, identityToken);
 		resourceItem = Optional.of(involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), newResource, STRING_EMPTY, system, identityToken));
+		
 		return resourceItem;
 	}
 	
 	@Override
-	@CacheResult(cacheName = "SessionsCache",skipGet = true)
-	public ISession<?> updateCache(@CacheKey IInvolvedParty<?,?> involvedParty, ISession<?> original,ISystems<?,?> system, UUID... identityToken)
+	@CacheResult(cacheName = "SessionsCache", skipGet = true)
+	public IUserSession<?> updateCache(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, UUID... identityToken)
 	{
 		return original;
 	}
 	
 	@Override
-	@CacheResult(cacheName = "SessionsCache",skipGet = true)
-	public ISession<?> expireSession(@CacheKey IInvolvedParty<?,?> involvedParty, ISession<?> original,ISystems<?,?> system, UUID... identityToken)
+	@CacheRemove(cacheName = "SessionsCache")
+	public void removeCache(@CacheKey IInvolvedParty<?, ?> involvedParty)
 	{
-		ISession<?> session = original;
+	}
+	
+	@Override
+	@CacheResult(cacheName = "SessionsCache", skipGet = true)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	public IUserSession<?> expireSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, UUID... identityToken)
+	{
+		IUserSession<?> session = original;
 		try
 		{
 			if (session == null && involvedParty == null)
@@ -136,13 +168,13 @@ public class SessionMasterService
 				          .finer("Session has no involved party. First session call?");
 				return session;
 			}
-			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
-			Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem = involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(),null, system,false,false, identityToken);
-			resourceItem.get()
-			            .expire(identityToken);
-			resourceItem.get().getSecondary().expire();
+			IResourceItemService<?> resourceItemService = GuiceContext.get(IResourceItemService.class);
+			var resourceItem
+					= resourceItemService.findByUUID(original.getResourceItemID());
+			resourceItem.expire();
+			resourceItem.getDataRow();
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
 			LogFactory.getLog("SessionMasterService")
 			          .log(Level.SEVERE, "Error serializing the inecoming object to retrieve a session", e);
@@ -154,10 +186,11 @@ public class SessionMasterService
 		}
 		return session;
 	}
-
+	
 	@Override
-	@CacheResult(cacheName = "SessionsCache",skipGet = true)
-	public ISession<?> updateSession(@CacheKey IInvolvedParty<?,?> involvedParty, ISession<?> session,ISystems<?,?> system, UUID... identityToken)
+	@CacheResult(cacheName = "SessionsCache", skipGet = true)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	public IUserSession<?> updateSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, UUID... identityToken)
 	{
 		try
 		{
@@ -172,20 +205,28 @@ public class SessionMasterService
 			{
 				sessionString = "{}";
 			}
-
+			IResourceItemService<?> resourceItemService = GuiceContext.get(IResourceItemService.class);
 			var resourceItem =
-					involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(),null, system,false,false, identityToken);
-			if(resourceItem.isPresent())
+					resourceItemService.findByUUID(session.getResourceItemID());
+			if (resourceItem != null)
 			{
-				resourceItem.get()
-				            .getSecondary()
-				            .updateData(sessionString.getBytes(), system, identityToken);
+				var dataRow = resourceItem.getDataRow();
+				if (dataRow.isPresent())
+				{
+					resourceItem.updateData(sessionString.getBytes(), system, identityToken);
+				}
+				else
+				{
+					throw new ResourceItemException("Cannot update a session that has no active data row attached");
+				}
 			}
 			else
 			{
-				IResourceItemService<?> resourceItemService = GuiceContext.get(IResourceItemService.class);
-				IResourceItem<?, ?> iResourceItem = resourceItemService.create(JsonPacket.toString(), "application/json", system, identityToken);
-				iResourceItem.updateData(sessionString.getBytes(),system,identityToken);
+				if (session.getResourceItemID() == null && session.getDataID() == null && session.getInvolvedParty() != null)
+				{
+					return getSession(involvedParty, session, system, identityToken);
+				}
+				throw new ResourceItemException("Cannot update a session that has no resource item UUID attached");
 			}
 		}
 		catch (IOException e)

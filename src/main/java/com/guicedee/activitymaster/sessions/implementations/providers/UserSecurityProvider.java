@@ -1,24 +1,20 @@
 package com.guicedee.activitymaster.sessions.implementations.providers;
 
-import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.guicedee.activitymaster.sessions.services.ISession;
+import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
 import com.guicedee.guicedinjection.GuiceContext;
 
 public class UserSecurityProvider
 		implements Provider<UserSecurityDTO>
 {
-	@Inject
-	private ISession<?> session;
-	
 	@Override
 	public UserSecurityDTO get()
 	{
+		IUserSession<?> session = GuiceContext.get(IUserSession.class);
 		if (session == null)
 		{
-			GuiceContext.inject()
-			            .injectMembers(this);
+			return null;
 		}
 		UserSecurityDTO us;
 		if (session.hasValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME))

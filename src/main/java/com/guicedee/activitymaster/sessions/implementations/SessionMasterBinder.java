@@ -17,31 +17,31 @@ public class SessionMasterBinder
 	protected void configure()
 	{
 		@SuppressWarnings("Convert2Diamond")
-		Key<ISessionMasterService<?>> genericKey = Key.get(new TypeLiteral<ISessionMasterService<?>>() {});
+		Key<IUserSessionService<?>> genericKey = Key.get(new TypeLiteral<IUserSessionService<?>>() {});
 		@SuppressWarnings("Convert2Diamond")
-		Key<ISessionMasterService<SessionMasterService>> realKey
-				= Key.get(new TypeLiteral<ISessionMasterService<SessionMasterService>>() {});
+		Key<IUserSessionService<UserSessionService>> realKey
+				= Key.get(new TypeLiteral<IUserSessionService<UserSessionService>>() {});
 		
 		bind(genericKey).to(realKey);
-		bind(realKey).to(SessionMasterService.class);
-		bind(ISessionMasterService.class).to(genericKey);
+		bind(realKey).to(UserSessionService.class);
+		bind(IUserSessionService.class).to(genericKey);
 		
 		expose(genericKey);
-		expose(ISessionMasterService.class);
+		expose(IUserSessionService.class);
 		
 		
 		@SuppressWarnings("Convert2Diamond")
-		Key<ISession<?>> genericKeySession = Key.get(new TypeLiteral<ISession<?>>() {});
+		Key<IUserSession<?>> genericKeySession = Key.get(new TypeLiteral<IUserSession<?>>() {});
 		@SuppressWarnings("Convert2Diamond")
-		Key<ISession<Session>> realKeySession
-				= Key.get(new TypeLiteral<ISession<Session>>() {});
+		Key<IUserSession<UserSession>> realKeySession
+				= Key.get(new TypeLiteral<IUserSession<UserSession>>() {});
 		
 		bind(genericKeySession).to(realKeySession).in(CallScope.class);
-		bind(realKeySession).toProvider(SessionProvider.class).in(CallScope.class);
-		bind(ISession.class).to(genericKeySession).in(CallScope.class);
+		bind(realKeySession).toProvider(UserSessionProvider.class).in(CallScope.class);
+		bind(IUserSession.class).to(genericKeySession).in(CallScope.class);
 		
 		expose(genericKeySession);
-		expose(ISession.class);
+		expose(IUserSession.class);
 		
 		@SuppressWarnings("Convert2Diamond")
 		Key<ISessionLoginService<?>> genericKeySessionLoginService = Key.get(new TypeLiteral<ISessionLoginService<?>>() {});
@@ -57,6 +57,7 @@ public class SessionMasterBinder
 		expose(ISessionLoginService.class);
 		
 		bind(UserSecurityDTO.class).toProvider(UserSecurityProvider.class);
+		
 		expose(UserSecurityDTO.class);
 	}
 

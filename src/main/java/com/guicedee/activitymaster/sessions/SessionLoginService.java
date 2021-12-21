@@ -1,8 +1,7 @@
 package com.guicedee.activitymaster.sessions;
 
 import com.google.common.base.Strings;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
+import com.google.inject.*;
 import com.google.inject.name.Named;
 import com.guicedee.activitymaster.fsdm.client.services.*;
 import com.guicedee.activitymaster.fsdm.client.services.annotations.*;
@@ -50,9 +49,8 @@ import static com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileIdentificationTypes.*;
 import static com.guicedee.activitymaster.profiles.enumerations.SiteClientClassifications.*;
-import static com.guicedee.activitymaster.profiles.services.enumerations.UserRoles.*;
 import static com.guicedee.activitymaster.profiles.services.interfaces.IRolesService.*;
-import static com.guicedee.activitymaster.sessions.services.ISessionMasterService.*;
+import static com.guicedee.activitymaster.sessions.services.IUserSessionService.*;
 import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static java.time.temporal.ChronoUnit.*;
@@ -66,7 +64,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	private IEnterprise<?, ?> enterprise;
 	
 	@Inject
-	private ISessionMasterService<?> sessionMasterService;
+	private IUserSessionService<?> sessionMasterService;
 	
 	@Inject
 	private ISecurityTokenService<?> securityTokenService;
@@ -91,13 +89,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@Inject
 	private ProfileServiceDTO<?> dto;
 	
-	@Inject
-	private Provider<ISession<?>> session;
-	
-	@Inject
-	private Provider<UserSecurityDTO> us;
-	
 	@Override
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
@@ -142,39 +135,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			profileServiceDTO.setInvolvedParty(foundIPCurrentOnDevice);
 			profileServiceDTO.setIdentityToken(foundIPCurrentOnDevice.getId());
 		}
-		
-		ISession<?> session = sessionMasterService.getSession(foundIPCurrentOnDevice, system, identityToken);
-		UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
-		
 		updateLatestVisit(foundIPCurrentOnDevice, identityToken);
-		Set<String> roles = new TreeSet<>();
-		if (us.isLoggedIn())
-		{
-			if (!us.getLoginExpiresOn()
-					.isBefore(com.entityassist.RootEntity.getNow()))
-			{
-				//fetch sync ip and compare for logout?
-				
-				return loginUser(new UserLoginDTO<>().setInvolvedParty(foundIPCurrentOnDevice)
-				                                     .setWebClientUUID(profileServiceDTO.getWebClientUUID())
-				                                     .setIdentityToken(foundIPCurrentOnDevice.getId()),
-						true, system, identityToken);
-			}
-		}
-		else
-		{
-			if (!foundIPCurrentOnDevice.equals(deviceIP))
-			{
-				logoutUser(profileServiceDTO, system, identityToken);
-			}
-			roles.addAll(Set.of(Visitor.toString()));
-		}
-		session.setSystem(system);
-		session.addValue(USER_ROLES_SESSION_NAME, roles);
-		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
 		
-		sessionMasterService.updateCache(foundIPCurrentOnDevice, session, system, identityToken);
-		
+		sessionMasterService.getSession(foundIPCurrentOnDevice, system, identityToken);
 		return profileServiceDTO;
 	}
 	
@@ -188,21 +151,47 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
 		{
 			identityToken = new UUID[]{this.identityToken};
 		}
-		IInvolvedParty<?, ?> deviceIP = involvedPartyService.get()
-		                                                    .builder()
-		                                                    .findByTypeAll(TypeDevice.toString(), dto.getWebClientUUID()
-		                                                                                          .toString(),
-				                                                    system, identityToken)
-		                                                    .latestFirst()
-		                                                    .setMaxResults(1)
-		                                                    .get()
-		                                                    .orElseThrow(() -> new InvolvedPartyException("Device IP must already exist before attempting to login"));
+		IInvolvedParty<?, ?> deviceIP = null;
+		try
+		{
+			deviceIP = involvedPartyService.get()
+			                               .builder()
+			                               .findByTypeAll(TypeDevice.toString(), dto.getWebClientUUID()
+			                                                                        .toString(),
+					                               system, identityToken)
+			                               .latestFirst()
+			                               .setMaxResults(1)
+			                               .get()
+			                               .orElseThrow(() -> new InvolvedPartyException("Device IP must already exist before attempting to login"));
+		}
+		catch (InvolvedPartyException ipe)
+		{
+			try
+			{
+				loginVisitor(profileServiceDTO, system, identityToken);
+				deviceIP = involvedPartyService.get()
+				                               .builder()
+				                               .findByTypeAll(TypeDevice.toString(), dto.getWebClientUUID()
+				                                                                        .toString(),
+						                               system, identityToken)
+				                               .latestFirst()
+				                               .setMaxResults(1)
+				                               .get()
+				                               .orElseThrow(() -> new InvolvedPartyException("Device IP must already exist before attempting to login"));
+			}
+			catch (OutOfScopeException | ProvisionException op)
+			{
+				throw ipe;
+			}
+		}
+		
 		try
 		{
 			IInvolvedParty<?, ?> foundParty;
@@ -251,6 +240,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public ProfileServiceDTO<?> logoutUser(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
@@ -290,6 +280,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@InvolvedPartyEvent(Added)
 	@LogItemEvent(Added)
 	@Override
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public void setUserLoggedIn(@Party("UserLoggingIn") IInvolvedParty<?, ?> newIp,
 	                            @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
 	                            boolean rememberMe,
@@ -302,12 +293,12 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		profileServiceDTO.setInvolvedParty(newIp);
 		profileServiceDTO.setIdentityToken(newIp.getId());
 		
-		session.get().setInvolvedParty(newIp);
-		ISession<?> session = sessionMasterService.getSession(newIp, system, identityToken);
+		IUserSession<?> session = GuiceContext.get(IUserSession.class);
+		session.setInvolvedParty(newIp);
 		
-		this.session.get().clear();
-		this.session.get().updateFrom(session);
-
+		sessionMasterService.updateSession(newIp, session, system, identityToken);
+		sessionMasterService.removeCache(newIp);
+		
 		dto.setEnterprise(enterprise);
 		dto.setInvolvedParty(newIp);
 		dto.setWebClientUUID(profileServiceDTO.getWebClientUUID());
@@ -316,49 +307,51 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		dto.updateFrom(profileServiceDTO);
 		
-		this.session.get().addValue(IDENTITY_SESSION_NAME, dto);
+		session.addValue(IDENTITY_SESSION_NAME, dto);
 		UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
 		us.setLoggedIn(true)
 		  .setLoginExpiresOn(rememberMe
 				  ? LocalDateTime.MAX
 				  : com.entityassist.RootEntity.getNow()
-				                 .plusMinutes(20))
+				                               .plusMinutes(20))
 		  .setRememberMe(rememberMe);
-		this.us.get().updateFrom(us);
-		this.session.get().addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		this.session.get().addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(newIp, system, identityToken));
+		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
+		session.addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(newIp, system, identityToken));
 		
-		sessionMasterService.updateSession(newIp, this.session.get(), system, identityToken);
+		sessionMasterService.updateSession(newIp, session, system, identityToken);
 	}
 	
 	@InvolvedPartyEvent(value = Added)
 	@LogItemEvent(value = Added)
 	@Override
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public void setUserLoggedOut(@Party("UserLoggedOut") IInvolvedParty<?, ?> involvedParty,
 	                             @Party("DeviceUsedBy") IInvolvedParty<?, ?> deviceIP,
 	                             @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
 	                             @Party("SystemPerformed") ISystems<?, ?> system, UUID... identityToken)
 	{
-		us.get().setRememberMe(false);
-		us.get().setLoggedIn(false);
-		us.get().setLoginExpiresOn(com.entityassist.RootEntity.getNow());
-		session.get().addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		session.get().removeValue(USER_ROLES_SESSION_NAME);
-		sessionMasterService.updateSession(involvedParty, session.get(), system, identityToken);
+		IUserSession<?> session = GuiceContext.get(IUserSession.class);
+		
+		UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
+		us.setRememberMe(false);
+		us.setLoggedIn(false);
+		us.setLoginExpiresOn(com.entityassist.RootEntity.getNow());
+		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
+		session.removeValue(USER_ROLES_SESSION_NAME);
+		sessionMasterService.updateSession(involvedParty, session, system, identityToken);
 		
 		//set profile service dto to the device IP
 		profileServiceDTO.setIdentityToken(deviceIP.getId());
 		profileServiceDTO.setInvolvedParty(deviceIP);
-		ISession<?> session = sessionMasterService.getSession(deviceIP, system, identityToken);
-		this.session.get().setInvolvedParty(deviceIP);
-		this.session.get().setSystem(system);
-		this.session.get().clear();
-		this.session.get().updateFrom(session);
 		
-		sessionMasterService.updateSession(deviceIP, this.session.get(), system, identityToken);
+		session.setInvolvedParty(deviceIP);
+		session.setSystem(system);
+		
+		sessionMasterService.updateSession(deviceIP, session, system, identityToken);
 	}
 	
 	@Override
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public UserConfirmationKeyDTO<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException
 	{
 		IInvolvedParty<?, ?> ipExists = involvedPartyService.get()
@@ -422,7 +415,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return confirmationKeyDTO;
 	}
 	
-	
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	IInvolvedParty<?, ?> createDeviceIP(ProfileServiceDTO<?> profileServiceDTO)
 	{
 		String webClientUUID = profileServiceDTO.getWebClientUUID()
@@ -430,7 +423,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		IInvolvedPartyType<?, ?> deviceType = involvedPartyService.findType(TypeDevice.toString(), system.get(), identityToken);
 		IInvolvedParty<?, ?> newIp = involvedPartyService.get()
 		                                                 .builder()
-		                                                 .findByTypeAll(TypeDevice.toString(),  webClientUUID, system.get(), identityToken)
+		                                                 .findByTypeAll(TypeDevice.toString(), webClientUUID, system.get(), identityToken)
 		                                                 .latestFirst()
 		                                                 .setMaxResults(1)
 		                                                 .get()
@@ -446,6 +439,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return newIp;
 	}
 	
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	IInvolvedParty<?, ?> updateLatestVisit(IInvolvedParty<?, ?> newIp,
 	                                       UUID... identityToken)
 	{
@@ -487,7 +481,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return userLoginDTO;
 	}
 	
-	
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	IInvolvedParty<?, ?> configureFromHTTPServletRequest(UserDTO<?> dto, IInvolvedParty<?, ?> ip, ISystems<?, ?> profileSystem, HttpServletRequest servletRequest, IEnterprise<?, ?> enterprise)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -534,6 +528,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return ip;
 	}
 	
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	IInvolvedParty<?, ?> configureFromReadableUserAgent(IInvolvedParty<?, ?> ip, ReadableUserAgent readableUserAgent, ISystems<?, ?> profileSystem, UUID... identityToken)
 	{
 		ip.addOrReuseClassification(BrowserDeviceCategory, readableUserAgent.getDeviceCategory()

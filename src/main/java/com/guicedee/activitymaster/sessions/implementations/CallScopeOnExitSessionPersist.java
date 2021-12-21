@@ -1,45 +1,62 @@
 package com.guicedee.activitymaster.sessions.implementations;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import com.guicedee.activitymaster.fsdm.client.services.annotations.ActivityMasterDB;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.sessions.services.ISession;
-import com.guicedee.activitymaster.sessions.services.ISessionMasterService;
+import com.google.inject.OutOfScopeException;
+import com.google.inject.ProvisionException;
+import com.guicedee.activitymaster.sessions.services.IUserSession;
+import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
 import com.guicedee.guicedinjection.GuiceContext;
-import com.guicedee.guicedpersistence.db.annotations.Transactional;
+import com.guicedee.guicedservlets.CallScopeProperties;
 import com.guicedee.guicedservlets.services.IOnCallScopeExit;
+import lombok.extern.java.Log;
 
-import java.time.temporal.ChronoUnit;
+import java.util.logging.Level;
 
-import static com.guicedee.activitymaster.sessions.services.ISessionMasterService.*;
+import static com.guicedee.activitymaster.fsdm.client.services.IActivityMasterService.*;
+import static com.guicedee.activitymaster.sessions.services.IUserSessionService.*;
 
+@Log
 public class CallScopeOnExitSessionPersist implements IOnCallScopeExit<CallScopeOnExitSessionPersist>
 {
-	@Inject
-	private ISession<?> session;
-	
-	@Inject
-	private ISessionMasterService<?> service;
-	
-	@Inject
-	@Named(SessionMasterSystemName)
-	private ISystems<?, ?> system;
-	
 	@Override
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public void onScopeExit()
 	{
-		if (session.getInvolvedParty() != null)
+		try
 		{
-			UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
-			if (us.isLoggedIn())
+			CallScopeProperties callScopeProperties = GuiceContext.get(CallScopeProperties.class);
+			if (callScopeProperties.isWebCall())
 			{
-				us.setLoginExpiresOn(com.entityassist.RootEntity.getNow()
-				                                  .plus(20, ChronoUnit.MINUTES));
+				return;
 			}
-			service.updateSession(session.getInvolvedParty(), session, system);
+			IUserSession<?> session = GuiceContext.get(IUserSession.class);
+			if (session == null)
+			{
+				return;
+			}
+			
+			if (session.getInvolvedParty() != null)
+			{
+				UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
+				if (us.isLoggedIn())
+				{
+					us.setLoginExpiresOn(com.entityassist.RootEntity.getNow()
+					                                                .plus(us.getSessionTimeout()));
+				}
+				try
+				{
+					IUserSessionService<?> sessionMasterService = GuiceContext.get(IUserSessionService.class);
+					sessionMasterService.updateSession(session.getInvolvedParty(), session, getISystem(SessionMasterSystemName), getISystemToken(SessionMasterSystemName));
+				}
+				catch (Throwable T)
+				{
+					log.log(Level.FINE, "Couldn't update user session, not called from a session?", T);
+				}
+			}
+		}
+		catch (OutOfScopeException | ProvisionException e)
+		{
+			log.log(Level.FINE, "Scope closing but call scope properties not populated", e);
 		}
 	}
+	
 }

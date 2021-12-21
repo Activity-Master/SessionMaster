@@ -6,10 +6,11 @@ import com.guicedee.guicedinjection.representations.IJsonRepresentation;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.UUID;
 
 
 @SuppressWarnings("UnusedReturnValue")
-public interface ISession<J extends ISession<J>>
+public interface IUserSession<J extends IUserSession<J>>
 		extends Serializable, IJsonRepresentation<J>
 {
 	void clear();
@@ -19,10 +20,9 @@ public interface ISession<J extends ISession<J>>
 	 *
 	 * @param key    The key to apply to the session
 	 * @param object The object for the session
-	 *
 	 * @return Any values required
 	 */
-	ISession<?> addValue(String key, Object object);
+	IUserSession<?> addValue(String key, Object object);
 	
 	boolean hasValue(String key);
 	
@@ -30,20 +30,27 @@ public interface ISession<J extends ISession<J>>
 	 * Removes a value from the session properties
 	 *
 	 * @param key The key to update
-	 *
 	 * @return The session
 	 */
-	ISession<?> removeValue(String key);
+	IUserSession<?> removeValue(String key);
 	
 	<T> T as(String key, Class<T> type);
 	
-	ISession<?> setInvolvedParty(IInvolvedParty<?,?> involvedParty);
+	IUserSession<?> setInvolvedParty(IInvolvedParty<?, ?> involvedParty);
 	
-	IInvolvedParty<?,?> getInvolvedParty();
+	IInvolvedParty<?, ?> getInvolvedParty();
 	
-	ISystems<?,?> getSystem();
+	ISystems<?, ?> getSystem();
 	
-	ISession<?> setSystem(ISystems<?,?> system);
+	IUserSession<?> setSystem(ISystems<?, ?> system);
 	
 	Map<String, String> getValues();
+	
+	UUID getResourceItemID();
+	
+	IUserSession<?> setResourceItemID(UUID resourceItemID);
+	
+	UUID getDataID();
+	
+	IUserSession<?> setDataID(UUID dataID);
 }
