@@ -18,12 +18,7 @@
         <dependency>
             <groupId>com.guicedee.activitymaster</groupId>
             <artifactId>activity-master</artifactId>
-            <version>0.0.0_0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.jwebmp.core</groupId>
-            <artifactId>jwebmp-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -31,13 +26,6 @@
             <artifactId>profile-master</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-
-        <dependency>
-            <groupId>com.guicedee.services</groupId>
-            <artifactId>uadetector-core</artifactId>
-        </dependency>
-
 
     </dependencies>
 </project>

@@ -7,7 +7,6 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.syste
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.guicedinjection.json.*;
 import com.guicedee.guicedinjection.representations.IJsonRepresentation;
-import com.guicedee.guicedservlets.services.scopes.CallScope;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -23,7 +22,6 @@ import static java.time.temporal.ChronoUnit.*;
 @JsonAutoDetect(fieldVisibility = ANY,
                 getterVisibility = NONE,
                 setterVisibility = NONE)
-@CallScope
 public class UserSecurityDTO
 		implements Serializable, IJsonRepresentation<UserSecurityDTO>
 {

@@ -5,7 +5,6 @@ import com.google.inject.*;
 import com.google.inject.name.Named;
 import com.guicedee.activitymaster.fsdm.client.services.*;
 import com.guicedee.activitymaster.fsdm.client.services.annotations.*;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.address.IAddress;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.classifications.IClassification;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
@@ -14,7 +13,6 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.syste
 import com.guicedee.activitymaster.fsdm.client.services.exceptions.InvolvedPartyException;
 import com.guicedee.activitymaster.fsdm.client.services.exceptions.SecurityAccessException;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
-import com.guicedee.activitymaster.profiles.dto.UserDTO;
 import com.guicedee.activitymaster.profiles.exceptions.*;
 import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
 import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
@@ -23,36 +21,23 @@ import com.guicedee.activitymaster.sessions.services.dto.*;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.json.LocalDateTimeDeserializer;
 import com.guicedee.guicedinjection.pairing.Pair;
-import com.guicedee.guicedservlets.GuicedServletKeys;
-import com.guicedee.logger.LogFactory;
-import jakarta.servlet.http.HttpServletRequest;
-import net.sf.uadetector.ReadableUserAgent;
-import org.json.JSONObject;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.guicedee.activitymaster.fsdm.client.services.annotations.EventAction.*;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.DefaultClassifications.*;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.InvolvedPartyClassifications.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.address.AddressLocalSystemClassifications.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.address.AddressRemoteSystemClassifications.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.address.AddressWebClassifications.*;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.IPTypes.*;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.IdentificationTypes.*;
 import static com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileIdentificationTypes.*;
-import static com.guicedee.activitymaster.profiles.enumerations.SiteClientClassifications.*;
 import static com.guicedee.activitymaster.profiles.services.interfaces.IRolesService.*;
 import static com.guicedee.activitymaster.sessions.services.IUserSessionService.*;
 import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
 import static java.time.temporal.ChronoUnit.*;
 
 
@@ -110,7 +95,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			//new device there will be nothing else ever
 			profileServiceDTO.setInvolvedParty(deviceIP);
 			profileServiceDTO.setIdentityToken(deviceIP.getId());
-			configureFromReadableUserAgent(deviceIP, GuiceContext.get(ReadableUserAgent.class), system, identityToken);
+			/*configureFromReadableUserAgent(deviceIP, GuiceContext.get(ReadableUserAgent.class), system, identityToken);
 			try
 			{
 				HttpServletRequest request = get(GuicedServletKeys.getHttpServletRequestKey());
@@ -119,7 +104,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			catch (Throwable T)
 			{
 				log.log(Level.FINER, "Unable to log servlet request information", T);
-			}
+			}*/
 		}
 		//search by web client uuid
 		IInvolvedParty<?, ?> foundIPCurrentOnDevice = dto.findInvolvedParty();
@@ -482,7 +467,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
-	IInvolvedParty<?, ?> configureFromHTTPServletRequest(UserDTO<?> dto, IInvolvedParty<?, ?> ip, ISystems<?, ?> profileSystem, HttpServletRequest servletRequest, IEnterprise<?, ?> enterprise)
+	/*IInvolvedParty<?, ?> configureFromHTTPServletRequest(UserDTO<?> dto, IInvolvedParty<?, ?> ip, ISystems<?, ?> profileSystem, HttpServletRequest servletRequest, IEnterprise<?, ?> enterprise)
 	{
 		StringBuilder sb = new StringBuilder();
 		Enumeration<String> headerNames = servletRequest.getHeaderNames();
@@ -542,6 +527,6 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		                                                                    .getFamily()
 		                                                                    .getName(), profileSystem, identityToken);
 		return ip;
-	}
+	}*/
 	
 }

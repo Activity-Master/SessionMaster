@@ -8,19 +8,21 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.guicedinjection.GuiceContext;
-import com.guicedee.guicedservlets.CallScopeProperties;
-import lombok.extern.java.Log;
+import com.guicedee.logger.LogFactory;
 
 import java.util.UUID;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.guicedee.activitymaster.fsdm.client.services.IActivityMasterService.*;
 import static com.guicedee.activitymaster.sessions.services.IUserSessionService.*;
 
-@Log
+
 public class UserSessionProvider
 		implements Provider<IUserSession<UserSession>>
 {
+	private static final Logger log = LogFactory.getLog(UserSessionProvider.class);
+	
 	@Inject
 	private IEnterprise<?, ?> enterprise;
 	
@@ -42,12 +44,7 @@ public class UserSessionProvider
 		{
 			return null;
 		}
-		CallScopeProperties callScopeProperties = GuiceContext.get(CallScopeProperties.class);
-		if (callScopeProperties.isWebCall())
-		{
-			return null;
-		}
-		
+	
 		UUID localStorageKey = GuiceContext.get(Key.get(UUID.class, Names.named("localstorage")));
 		if (localStorageKey == null)
 		{

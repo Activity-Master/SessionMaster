@@ -10,7 +10,6 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.syste
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.logger.LogFactory;
 import jakarta.cache.annotation.CacheKey;
-import lombok.SneakyThrows;
 
 import java.io.Serial;
 import java.text.MessageFormat;
@@ -62,14 +61,20 @@ public class UserSession
 		values.clear();
 	}
 	
-	@SneakyThrows
 	@Override
 	public IUserSession<?> addValue(String key, Object object)
 	{
 		String result;
 		if (!(object instanceof String))
 		{
-			result = get(DefaultObjectMapper).writeValueAsString(object);
+			try
+			{
+				result = get(DefaultObjectMapper).writeValueAsString(object);
+			}
+			catch (JsonProcessingException e)
+			{
+				throw new RuntimeException(e);
+			}
 		}
 		else
 		{

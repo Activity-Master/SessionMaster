@@ -2,7 +2,6 @@ package com.guicedee.activitymaster.sessions.services.dto;
 
 import com.fasterxml.jackson.annotation.*;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
-import lombok.EqualsAndHashCode;
 
 import java.util.UUID;
 
@@ -13,7 +12,6 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
 @JsonAutoDetect(fieldVisibility = ANY,
                 getterVisibility = NONE,
                 setterVisibility = NONE)
-@EqualsAndHashCode(callSuper = true, of = {})
 public class UserConfirmationKeyDTO<J extends UserConfirmationKeyDTO<J>>
 		extends ProfileServiceDTO<J>
 {
