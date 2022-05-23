@@ -9,7 +9,7 @@ import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.activitymaster.sessions.services.dto.UserConfirmationKeyDTO;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 
-import java.util.UUID;
+
 
 public interface ISessionLoginService<J extends ISessionLoginService<J>>
 {
@@ -22,17 +22,17 @@ public interface ISessionLoginService<J extends ISessionLoginService<J>>
 	 * @return
 	 * @throws ProfileServiceException
 	 */
-	ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException;
+	ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException;
 
 	void setUserLoggedIn(IInvolvedParty<?, ?> newIp,
 	                    ProfileServiceDTO<?> profileServiceDTO,
 	                     boolean rememberMe,
-	                     ISystems<?, ?> system, UUID... identityToken);
+	                     ISystems<?, ?> system, java.util.UUID... identityToken);
 	
 	void setUserLoggedOut(IInvolvedParty<?, ?> involvedParty,
 	                      IInvolvedParty<?, ?> deviceIP,
 	                      ProfileServiceDTO<?> profileServiceDTO,
-	                      ISystems<?, ?> system, UUID... identityToken);
+	                      ISystems<?, ?> system, java.util.UUID... identityToken);
 	
 	/**
 	 * Creates a confirmation key that expires after two hours to a page link that will authenticate the request
@@ -44,7 +44,7 @@ public interface ISessionLoginService<J extends ISessionLoginService<J>>
 	 * @throws UserExistsException
 	 * @throws WaitingForConfirmationKeyException
 	 */
-	UserConfirmationKeyDTO<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException;
+	UserConfirmationKeyDTO<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException;
 	
 	/**
 	 * Marks a user as logged in, with already verified as false
@@ -55,7 +55,7 @@ public interface ISessionLoginService<J extends ISessionLoginService<J>>
 	 * @return
 	 * @throws ProfileServiceException
 	 */
-	ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException;
+	ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException;
 	
 	/**
 	 * Logs a user out, and moves the current IP to the device IP
@@ -66,7 +66,7 @@ public interface ISessionLoginService<J extends ISessionLoginService<J>>
 	 * @return
 	 * @throws ProfileServiceException
 	 */
-	ProfileServiceDTO<?> logoutUser(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException;
+	ProfileServiceDTO<?> logoutUser(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException;
 	
 	/**
 	 * Logs in a user with already verified flag, if false the system will attempt to authenticate with the details in the dto
@@ -78,9 +78,9 @@ public interface ISessionLoginService<J extends ISessionLoginService<J>>
 	 * @return
 	 * @throws ProfileServiceException
 	 */
-	ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, UUID... identityToken) throws ProfileServiceException;
+	ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException;
 	
-	boolean verifyUsernameExists(UserLoginDTO<?> userLoginDTO, ISystems<?, ?> system, UUID... identityToken);
+	boolean verifyUsernameExists(UserLoginDTO<?> userLoginDTO, ISystems<?, ?> system, java.util.UUID... identityToken);
 	
-	UserLoginDTO<?> verifyPasswordForUser(UserLoginDTO<?> userLoginDTO, IEnterprise<?, ?> enterprise, UUID... identityToken);
+	UserLoginDTO<?> verifyPasswordForUser(UserLoginDTO<?> userLoginDTO, IEnterprise<?, ?> enterprise, java.util.UUID... identityToken);
 }

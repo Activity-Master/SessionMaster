@@ -26,9 +26,9 @@ public class UserConfirmationKeyDTO<J extends UserConfirmationKeyDTO<J>>
 		return this.confirmationKey;
 	}
 	
-	public UserConfirmationKeyDTO<J> setConfirmationKey(UUID confirmationKey)
+	public UserConfirmationKeyDTO<J> setConfirmationKey(java.lang.String confirmationKey)
 	{
-		this.confirmationKey = confirmationKey;
+		this.confirmationKey = UUID.fromString(confirmationKey);
 		return this;
 	}
 	

@@ -57,7 +57,7 @@ public class UserSessionProvider
 			{
 				IInvolvedParty<?, ?> byUUID = involvedPartyService.get();
 				byUUID = byUUID.builder()
-				               .find(localStorageKey)
+				               .find(localStorageKey.toString())
 				               .get()
 				               .orElse(null);
 				

@@ -41,14 +41,14 @@ public class UserSessionService
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache")
-	public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, UUID... identityToken)
+	public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		return getSession(involvedParty, new UserSession(), system, identityToken);
 	}
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache")
-	public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, UUID... identityToken)
+	public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		try
 		{
@@ -110,9 +110,9 @@ public class UserSessionService
 				}
 			}
 			
-			session.setResourceItemID(secondary.getId());
-			session.setDataID(data.get()
-			                      .getId());
+			session.setResourceItemID(UUID.fromString(secondary.getId()));
+			session.setDataID(UUID.fromString(data.get()
+			                                      .getId()));
 		}
 		catch (Exception e)
 		{
@@ -128,7 +128,7 @@ public class UserSessionService
 	}
 	
 	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
-	Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> saveNewSessionResourceItem(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, String sessionString, IResourceItemService<?> resourceItemService, UUID[] identityToken)
+	Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> saveNewSessionResourceItem(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, String sessionString, IResourceItemService<?> resourceItemService, java.util.UUID[] identityToken)
 	{
 		Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem;
 		
@@ -143,7 +143,7 @@ public class UserSessionService
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache", skipGet = true)
-	public IUserSession<?> updateCache(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, UUID... identityToken)
+	public IUserSession<?> updateCache(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		return original;
 	}
@@ -157,7 +157,7 @@ public class UserSessionService
 	@Override
 	@CacheResult(cacheName = "SessionsCache", skipGet = true)
 	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
-	public IUserSession<?> expireSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, UUID... identityToken)
+	public IUserSession<?> expireSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		IUserSession<?> session = original;
 		try
@@ -190,7 +190,7 @@ public class UserSessionService
 	@Override
 	@CacheResult(cacheName = "SessionsCache", skipGet = true)
 	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
-	public IUserSession<?> updateSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, UUID... identityToken)
+	public IUserSession<?> updateSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		try
 		{
