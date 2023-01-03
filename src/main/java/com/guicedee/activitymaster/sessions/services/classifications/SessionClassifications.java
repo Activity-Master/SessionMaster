@@ -1,6 +1,8 @@
 package com.guicedee.activitymaster.sessions.services.classifications;
 
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts.*;
+import com.guicedee.activitymaster.fsdm.client.types.classifications.EnterpriseClassificationDataConcepts;
+
+import static com.guicedee.activitymaster.fsdm.client.types.classifications.EnterpriseClassificationDataConcepts.*;
 
 public enum SessionClassifications
 {
@@ -17,9 +19,9 @@ public enum SessionClassifications
 	;
 
 	private String description;
-	private com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept;
+	private EnterpriseClassificationDataConcepts concept;
 
-	SessionClassifications(String description, com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept)
+	SessionClassifications(String description, EnterpriseClassificationDataConcepts concept)
 	{
 		this.description = description;
 		this.concept = concept;
@@ -35,7 +37,7 @@ public enum SessionClassifications
 		return this.description;
 	}
 
-	public com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept()
+	public EnterpriseClassificationDataConcepts concept()
 	{
 		return concept;
 	}

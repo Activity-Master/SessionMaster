@@ -3,12 +3,14 @@ package com.guicedee.activitymaster.sessions;
 import com.google.inject.*;
 import com.google.inject.name.Names;
 import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
+import com.guicedee.activitymaster.fsdm.client.services.annotations.ActivityMasterDB;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
+import jakarta.persistence.EntityManager;
 
 import java.util.UUID;
 import java.util.logging.Level;
@@ -31,6 +33,10 @@ public class UserSessionProvider
 	
 	@Inject
 	private IInvolvedPartyService<?> involvedPartyService;
+	
+	@Inject
+	@ActivityMasterDB
+	private EntityManager entityManager;
 	
 	@Override
 	public IUserSession<UserSession> get()
@@ -56,7 +62,7 @@ public class UserSessionProvider
 			try
 			{
 				IInvolvedParty<?, ?> byUUID = involvedPartyService.get();
-				byUUID = byUUID.builder()
+				byUUID = byUUID.builder(entityManager)
 				               .find(localStorageKey.toString())
 				               .get()
 				               .orElse(null);
@@ -66,7 +72,8 @@ public class UserSessionProvider
 					ISessionLoginService<?> sessionLoginService = GuiceContext.get(ISessionLoginService.class);
 					ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
 					ProfileServiceDTO<?> profileServiceDTO = sessionLoginService.loginVisitor(dto, getISystem(SessionMasterSystemName), getISystemToken(SessionMasterSystemName));
-					byUUID = profileServiceDTO.findInvolvedParty();
+					profileServiceDTO.findInvolvedParty();
+					byUUID = involvedPartyService.find(profileServiceDTO.getIdentityToken());
 				}
 				//noinspection unchecked
 				return (IUserSession<UserSession>) sessionMasterService.getSession(byUUID, getISystem(SessionMasterSystemName), getISystemToken(SessionMasterSystemName));

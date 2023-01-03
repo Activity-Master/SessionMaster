@@ -34,6 +34,7 @@ module com.guicedee.activitymaster.sessions {
 	//requires net.sf.uadetector.core;
 	requires com.guicedee.activitymaster.fsdm.client;
 	requires com.entityassist;
+	requires com.guicedee.activitymaster.fsdm.client.types;
 	
 	provides IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;

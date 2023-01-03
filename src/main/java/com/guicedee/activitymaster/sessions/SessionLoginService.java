@@ -10,8 +10,10 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enter
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedPartyType;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.fsdm.client.services.exceptions.InvolvedPartyException;
-import com.guicedee.activitymaster.fsdm.client.services.exceptions.SecurityAccessException;
+import com.guicedee.activitymaster.fsdm.client.types.annotations.LogItem;
+import com.guicedee.activitymaster.fsdm.client.types.annotations.Party;
+import com.guicedee.activitymaster.fsdm.client.types.exceptions.InvolvedPartyException;
+import com.guicedee.activitymaster.fsdm.client.types.exceptions.SecurityAccessException;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.profiles.exceptions.*;
 import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
@@ -21,18 +23,18 @@ import com.guicedee.activitymaster.sessions.services.dto.*;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.json.LocalDateTimeDeserializer;
 import com.guicedee.guicedinjection.pairing.Pair;
-import com.guicedee.guicedpersistence.db.annotations.Transactional;
+import jakarta.persistence.EntityManager;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static com.guicedee.activitymaster.fsdm.client.services.annotations.EventAction.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.DefaultClassifications.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.InvolvedPartyClassifications.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.IPTypes.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.IdentificationTypes.*;
+import static com.guicedee.activitymaster.fsdm.client.types.classifications.DefaultClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.types.classifications.EventAction.*;
+import static com.guicedee.activitymaster.fsdm.client.types.classifications.InvolvedPartyClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.types.classifications.types.IPTypes.*;
+import static com.guicedee.activitymaster.fsdm.client.types.classifications.types.IdentificationTypes.*;
 import static com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileIdentificationTypes.*;
@@ -72,11 +74,15 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@Named(SessionMasterSystemName)
 	private UUID identityToken;
 	
+	@Inject
+	@ActivityMasterDB
+	private EntityManager entityManager;
+	
 //	@Inject
 //	private ProfileServiceDTO<?> dto;
 	
 	@Override
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
@@ -85,7 +91,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		}
 		ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
 		IInvolvedParty<?, ?> iInvolvedParty = involvedPartyService.get();
-		IInvolvedParty<?, ?> deviceIP = iInvolvedParty.builder()
+		IInvolvedParty<?, ?> deviceIP = iInvolvedParty.builder(entityManager)
 		                                              .findByType(TypeDevice.toString(), dto.getWebClientUUID()
 		                                                                                    .toString(),
 				                                              system, identityToken)
@@ -95,7 +101,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			deviceIP = createDeviceIP(profileServiceDTO);
 			//new device there will be nothing else ever
-			profileServiceDTO.setInvolvedParty(deviceIP);
+			//profileServiceDTO.setInvolvedParty(deviceIP);
 			profileServiceDTO.setIdentityToken(UUID.fromString(deviceIP.getId()));
 			/*configureFromReadableUserAgent(deviceIP, GuiceContext.get(ReadableUserAgent.class), system, identityToken);
 			try
@@ -109,17 +115,18 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			}*/
 		}
 		//search by web client uuid
-		IInvolvedParty<?, ?> foundIPCurrentOnDevice = dto.findInvolvedParty();
+		dto.findInvolvedParty();
+		IInvolvedParty<?, ?> foundIPCurrentOnDevice = involvedPartyService.find(dto.getIdentityToken());
 		if (foundIPCurrentOnDevice == null)
 		{
 			//new device there will be nothing else ever
-			profileServiceDTO.setInvolvedParty(deviceIP);
+			//profileServiceDTO.setInvolvedParty(deviceIP);
 			profileServiceDTO.setIdentityToken(UUID.fromString(deviceIP.getId()));
 			foundIPCurrentOnDevice = deviceIP;
 		}
 		else
 		{
-			profileServiceDTO.setInvolvedParty(foundIPCurrentOnDevice);
+			//profileServiceDTO.setInvolvedParty(foundIPCurrentOnDevice);
 			profileServiceDTO.setIdentityToken(UUID.fromString(foundIPCurrentOnDevice.getId()));
 		}
 		updateLatestVisit(foundIPCurrentOnDevice, identityToken);
@@ -128,7 +135,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return profileServiceDTO;
 	}
 	
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	private IInvolvedParty<?, ?> authenticate(UserLoginDTO<?> loginDTO)
 	{
 		return passwordsService.findByUsernameAndPassword(loginDTO.getUserName(),
@@ -139,7 +146,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
@@ -151,7 +158,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		try
 		{
 			deviceIP = involvedPartyService.get()
-			                               .builder()
+			                               .builder(entityManager)
 			                               .findByTypeAll(TypeDevice.toString(), dto.getWebClientUUID()
 			                                                                        .toString(),
 					                               system, identityToken)
@@ -166,7 +173,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			{
 				loginVisitor(profileServiceDTO, system, identityToken);
 				deviceIP = involvedPartyService.get()
-				                               .builder()
+				                               .builder(entityManager)
 				                               .findByTypeAll(TypeDevice.toString(), dto.getWebClientUUID()
 				                                                                        .toString(),
 						                               system, identityToken)
@@ -191,7 +198,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			}
 			else
 			{
-				foundParty = profileServiceDTO.findInvolvedParty();
+				//foundParty = profileServiceDTO.findInvolvedParty();
+				foundParty = involvedPartyService.find(profileServiceDTO.getIdentityToken());
 			}
 			
 			//move the webclient uuid to the new user, from device id, or wherever it is now
@@ -229,7 +237,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public ProfileServiceDTO<?> logoutUser(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
@@ -239,9 +247,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		var deviceIP
 				= createDeviceIP(profileServiceDTO);
 		
+		var ip = involvedPartyService.find(profileServiceDTO.getIdentityToken());
 		var idWebClient
-				= profileServiceDTO.findInvolvedParty()
-				                   .findInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
+				= ip.findInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
 						                   profileServiceDTO.getWebClientUUID()
 						                                    .toString(), system, false, false,
 						                   this.identityToken);
@@ -260,7 +268,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 				uuid,
 				system, identityToken);
 		
-		setUserLoggedOut(profileServiceDTO.findInvolvedParty(), deviceIP, profileServiceDTO, system, identityToken);
+		profileServiceDTO.findInvolvedParty();
+		var ips = involvedPartyService.find(profileServiceDTO.getIdentityToken());
+		setUserLoggedOut(ips, deviceIP, profileServiceDTO, system, identityToken);
 		
 		return profileServiceDTO;
 	}
@@ -269,7 +279,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@InvolvedPartyEvent(Added)
 	@LogItemEvent(Added)
 	@Override
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public void setUserLoggedIn(@Party("UserLoggingIn") IInvolvedParty<?, ?> newIp,
 	                            @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
 	                            boolean rememberMe,
@@ -279,7 +289,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			identityToken = new UUID[]{this.identityToken};
 		}
-		profileServiceDTO.setInvolvedParty(newIp);
+		//profileServiceDTO.setInvolvedParty(newIp);
 		profileServiceDTO.setIdentityToken(UUID.fromString(newIp.getId()));
 		
 		IUserSession<?> session = GuiceContext.get(IUserSession.class);
@@ -291,7 +301,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
 		
 		dto.setEnterprise(enterprise);
-		dto.setInvolvedParty(newIp);
+		//dto.setInvolvedParty(newIp);
 		dto.setWebClientUUID(profileServiceDTO.getWebClientUUID());
 		dto.setIdentityToken(profileServiceDTO.getIdentityToken());
 		dto.setEnterprise(system.getEnterprise());
@@ -315,7 +325,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@InvolvedPartyEvent(value = Added)
 	@LogItemEvent(value = Added)
 	@Override
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public void setUserLoggedOut(@Party("UserLoggedOut") IInvolvedParty<?, ?> involvedParty,
 	                             @Party("DeviceUsedBy") IInvolvedParty<?, ?> deviceIP,
 	                             @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
@@ -333,7 +343,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		//set profile service dto to the device IP
 		profileServiceDTO.setIdentityToken(UUID.fromString(deviceIP.getId()));
-		profileServiceDTO.setInvolvedParty(deviceIP);
+		//profileServiceDTO.setInvolvedParty(deviceIP);
 		
 		session.setInvolvedParty(deviceIP);
 		session.setSystem(system);
@@ -342,11 +352,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public UserConfirmationKeyDTO<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException
 	{
 		IInvolvedParty<?, ?> ipExists = involvedPartyService.get()
-		                                                    .builder()
+		                                                    .builder(entityManager)
 		                                                    .findByIdentificationType(IdentificationTypeUserName.toString(), userRegistrationDTO.getUserName(), system, identityToken)
 		                                                    .get()
 		                                                    .orElse(null);
@@ -360,11 +370,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		}
 		//ActivityMasterConfiguration.get().setSecurityEnabled(false);
 		IInvolvedParty<?, ?> newIp;
-		
 		ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
-		
-		newIp = dto.findInvolvedParty();
-		
+		dto.findInvolvedParty();
+		newIp = involvedPartyService.find(dto.getIdentityToken());
 		var idType
 				= newIp.addOrUpdateInvolvedPartyIdentificationType(NoClassification.toString(),
 				IdentificationTypeUserName,
@@ -407,14 +415,14 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return confirmationKeyDTO;
 	}
 	
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	IInvolvedParty<?, ?> createDeviceIP(ProfileServiceDTO<?> profileServiceDTO)
 	{
 		String webClientUUID = profileServiceDTO.getWebClientUUID()
 		                                        .toString();
 		IInvolvedPartyType<?, ?> deviceType = involvedPartyService.findType(TypeDevice.toString(), system.get(), identityToken);
 		IInvolvedParty<?, ?> newIp = involvedPartyService.get()
-		                                                 .builder()
+		                                                 .builder(entityManager)
 		                                                 .findByTypeAll(TypeDevice.toString(), webClientUUID, system.get(), identityToken)
 		                                                 .latestFirst()
 		                                                 .setMaxResults(1)
@@ -431,7 +439,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return newIp;
 	}
 	
-	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	////@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	IInvolvedParty<?, ?> updateLatestVisit(IInvolvedParty<?, ?> newIp,
 	                                       java.util.UUID... identityToken)
 	{
@@ -455,7 +463,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return passwordsService.doesUsernameExist(userLoginDTO.getUserName(), system);
 	}
 	
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	@Override
 	public UserLoginDTO<?> verifyPasswordForUser(UserLoginDTO<?> userLoginDTO, IEnterprise<?, ?> enterprise, java.util.UUID... identityToken)
 	{
@@ -474,7 +482,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return userLoginDTO;
 	}
 	
-	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	////@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	/*IInvolvedParty<?, ?> configureFromHTTPServletRequest(UserDTO<?> dto, IInvolvedParty<?, ?> ip, ISystems<?, ?> profileSystem, HttpServletRequest servletRequest, IEnterprise<?, ?> enterprise)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -521,7 +529,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return ip;
 	}
 	
-	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	////@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	IInvolvedParty<?, ?> configureFromReadableUserAgent(IInvolvedParty<?, ?> ip, ReadableUserAgent readableUserAgent, ISystems<?, ?> profileSystem, java.util.UUID... identityToken)
 	{
 		ip.addOrReuseClassification(BrowserDeviceCategory, readableUserAgent.getDeviceCategory()

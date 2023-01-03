@@ -13,7 +13,7 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceData;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceItem;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.fsdm.client.services.exceptions.ResourceItemException;
+import com.guicedee.activitymaster.fsdm.client.types.exceptions.ResourceItemException;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.ResourceItemTypes.*;
+import static com.guicedee.activitymaster.fsdm.client.types.classifications.ResourceItemTypes.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 import static com.guicedee.guicedinjection.json.StaticStrings.*;
@@ -50,7 +50,7 @@ public class UserSessionService
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache")
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		try
@@ -130,7 +130,7 @@ public class UserSessionService
 		return session;
 	}
 	
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> saveNewSessionResourceItem(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, String sessionString, IResourceItemService<?> resourceItemService, java.util.UUID[] identityToken)
 	{
 		Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem;
@@ -159,7 +159,7 @@ public class UserSessionService
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache", skipGet = true)
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public IUserSession<?> expireSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		IUserSession<?> session = original;
@@ -192,7 +192,7 @@ public class UserSessionService
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache", skipGet = true)
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	//@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
 	public IUserSession<?> updateSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		try
