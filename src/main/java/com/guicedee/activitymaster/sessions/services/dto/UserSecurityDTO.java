@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.profiles.deserializers.LocalDateTimeDeserializer;
+import com.guicedee.activitymaster.profiles.deserializers.LocalDateTimeSerializer;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
-import com.guicedee.guicedinjection.json.*;
-import com.guicedee.guicedinjection.representations.IJsonRepresentation;
+import com.guicedee.services.jsonrepresentation.IJsonRepresentation;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -35,8 +36,6 @@ public class UserSecurityDTO
 	private String lastIpAddress;
 	private String lastHeader;
 	
-	@JsonDeserialize(using = StringToDurationTime.class)
-	@JsonSerialize(using = DurationToString.class)
 	private Duration sessionTimeout;
 	
 	@JsonDeserialize(using = LocalDateTimeDeserializer.class)

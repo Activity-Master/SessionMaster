@@ -19,8 +19,8 @@ import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedpersistence.db.annotations.Transactional;
-import com.guicedee.logger.LogFactory;
-import jakarta.cache.annotation.*;
+import javax.cache.annotation.*;
+import lombok.extern.java.Log;
 
 import java.io.IOException;
 import java.util.*;
@@ -29,8 +29,8 @@ import java.util.logging.Level;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.ResourceItemTypes.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
-import static com.guicedee.guicedinjection.json.StaticStrings.*;
 
+@Log
 public class UserSessionService
 		implements IUserSessionService<UserSessionService>
 {
@@ -57,8 +57,7 @@ public class UserSessionService
 		{
 			if (session == null && involvedParty == null)
 			{
-				LogFactory.getLog("SessionMasterService")
-				          .finer("Session has no involved party. First session call?");
+				log.finer("Session has no involved party. First session call?");
 				return session;
 			}
 			
@@ -108,8 +107,7 @@ public class UserSessionService
 				catch (JsonParseException ioException)
 				{
 					//Guest?
-					LogFactory.getLog("SessionMasterService")
-					          .log(Level.FINE, "Error serializing the incoming object to retrieve a session", ioException);
+					log.log(Level.FINE, "Error serializing the incoming object to retrieve a session", ioException);
 				}
 			}
 			
@@ -119,8 +117,7 @@ public class UserSessionService
 		}
 		catch (Exception e)
 		{
-			LogFactory.getLog("SessionMasterService")
-			          .log(Level.SEVERE, "Error serializing the incoming object to retrieve a session", e);
+			log.log(Level.SEVERE, "Error serializing the incoming object to retrieve a session", e);
 		}
 		if (session != null)
 		{
@@ -139,7 +136,7 @@ public class UserSessionService
 				resourceItemService.create(JsonPacket.toString(), "application/json", system, identityToken);
 		
 		newResource.updateData(sessionString.getBytes(), system, identityToken);
-		resourceItem = Optional.of(involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), newResource, STRING_EMPTY, system, identityToken));
+		resourceItem = Optional.of(involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), newResource, "", system, identityToken));
 		
 		return resourceItem;
 	}
@@ -167,8 +164,7 @@ public class UserSessionService
 		{
 			if (session == null && involvedParty == null)
 			{
-				LogFactory.getLog("SessionMasterService")
-				          .finer("Session has no involved party. First session call?");
+				log.finer("Session has no involved party. First session call?");
 				return session;
 			}
 			IResourceItemService<?> resourceItemService = GuiceContext.get(IResourceItemService.class);
@@ -179,8 +175,7 @@ public class UserSessionService
 		}
 		catch (Exception e)
 		{
-			LogFactory.getLog("SessionMasterService")
-			          .log(Level.SEVERE, "Error serializing the inecoming object to retrieve a session", e);
+			log.log(Level.SEVERE, "Error serializing the inecoming object to retrieve a session", e);
 		}
 		if (session != null)
 		{
@@ -199,8 +194,7 @@ public class UserSessionService
 		{
 			if (system.isFake() || (session == null && involvedParty == null))
 			{
-				LogFactory.getLog("SessionMasterService")
-				          .finer("Session has no involved party. First session call?");
+				log.finer("Session has no involved party. First session call?");
 				return session;
 			}
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
@@ -234,8 +228,7 @@ public class UserSessionService
 		}
 		catch (IOException e)
 		{
-			LogFactory.getLog("SessionMasterService")
-			          .log(Level.SEVERE, "Error serializing the incoming object to retrieve a session", e);
+			log.log(Level.SEVERE, "Error serializing the incoming object to retrieve a session", e);
 		}
 		if (session != null)
 		{

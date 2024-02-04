@@ -2,7 +2,7 @@ package com.guicedee.activitymaster.sessions.services;
 
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.guicedinjection.representations.IJsonRepresentation;
+import com.guicedee.services.jsonrepresentation.IJsonRepresentation;
 
 import java.io.Serializable;
 import java.util.Map;

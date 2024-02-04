@@ -10,7 +10,8 @@ module com.guicedee.activitymaster.sessions {
 	
 	requires org.json;
 	requires com.guicedee.guicedpersistence;
-	//requires com.guicedee.guicedservlets;
+	
+	requires org.mapstruct;
 
 	requires com.guicedee.activitymaster.profiles;
 	
@@ -19,8 +20,9 @@ module com.guicedee.activitymaster.sessions {
 	requires cache.api;
 	
 	requires java.sql;
+	requires static lombok;
 	
-	//requires com.jwebmp.core;
+	requires com.guicedee.jsonrepresentation;
 
 	requires com.guicedee.activitymaster.fsdm;
 	requires com.google.guice;

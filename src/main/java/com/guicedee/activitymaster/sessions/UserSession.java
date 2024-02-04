@@ -8,27 +8,25 @@ import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
-import com.guicedee.logger.LogFactory;
-import jakarta.cache.annotation.CacheKey;
+import javax.cache.annotation.CacheKey;
+import lombok.extern.java.Log;
 
 import java.io.Serial;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.guicedee.guicedinjection.GuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Log
 public class UserSession
 		implements IUserSession<UserSession>
 {
 	@Serial
 	private static final long serialVersionUID = 1L;
-	
-	private static final Logger log = LogFactory.getLog("Session");
 	@JsonValue
 	private final Map<String, String> values = new LinkedHashMap<>();
 	

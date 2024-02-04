@@ -19,13 +19,15 @@ import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.activitymaster.sessions.services.dto.*;
 import com.guicedee.guicedinjection.GuiceContext;
-import com.guicedee.guicedinjection.json.LocalDateTimeDeserializer;
 import com.guicedee.guicedinjection.pairing.Pair;
 import com.guicedee.guicedpersistence.db.annotations.Transactional;
+import com.guicedee.services.jsonrepresentation.IJsonRepresentation;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.guicedee.activitymaster.fsdm.client.services.annotations.EventAction.*;
@@ -296,7 +298,17 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		dto.setIdentityToken(profileServiceDTO.getIdentityToken());
 		dto.setEnterprise(system.getEnterprise());
 		
-		dto.updateFrom(profileServiceDTO);
+		try
+		{
+			IJsonRepresentation.getObjectMapper()
+			                   .readerForUpdating(dto)
+			                   .readValue(dto.toJson());
+		}
+		catch (Exception e)
+		{
+			log.log(Level.SEVERE,"Session Master cannot update DTO from profile",e);
+		}
+		
 		
 		session.addValue(IDENTITY_SESSION_NAME, dto);
 		UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
@@ -435,7 +447,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	IInvolvedParty<?, ?> updateLatestVisit(IInvolvedParty<?, ?> newIp,
 	                                       java.util.UUID... identityToken)
 	{
-		String lastVisit = LocalDateTimeDeserializer.formats[0].format(com.entityassist.querybuilder.QueryBuilderSCD.convertToUTCDateTime(com.entityassist.RootEntity.getNow()));
+		String lastVisit = com.entityassist.querybuilder.QueryBuilderSCD.convertToUTCDateTime(com.entityassist.RootEntity.getNow()).format(DateTimeFormatter.ISO_DATE);
 		newIp.addOrUpdateClassification(LastVisitTime,
 				null,
 				lastVisit,
