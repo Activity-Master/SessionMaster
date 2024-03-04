@@ -16,7 +16,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.client.IGuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)

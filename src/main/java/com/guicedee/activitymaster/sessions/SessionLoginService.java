@@ -18,7 +18,6 @@ import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
 import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.activitymaster.sessions.services.dto.*;
-import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.pairing.Pair;
 import com.guicedee.guicedpersistence.db.annotations.Transactional;
 import com.guicedee.services.jsonrepresentation.IJsonRepresentation;
@@ -85,7 +84,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			identityToken = new UUID[]{this.identityToken};
 		}
-		ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
+		ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
 		IInvolvedParty<?, ?> iInvolvedParty = involvedPartyService.get();
 		IInvolvedParty<?, ?> deviceIP = iInvolvedParty.builder()
 		                                              .findByType(TypeDevice.toString(), dto.getWebClientUUID()
@@ -99,7 +98,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			//new device there will be nothing else ever
 			profileServiceDTO.setInvolvedParty(deviceIP);
 			profileServiceDTO.setIdentityToken(UUID.fromString(deviceIP.getId()));
-			/*configureFromReadableUserAgent(deviceIP, GuiceContext.get(ReadableUserAgent.class), system, identityToken);
+			/*configureFromReadableUserAgent(deviceIP, com.guicedee.client.IGuiceContext.get(ReadableUserAgent.class), system, identityToken);
 			try
 			{
 				HttpServletRequest request = get(GuicedServletKeys.getHttpServletRequestKey());
@@ -148,7 +147,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			identityToken = new UUID[]{this.identityToken};
 		}
-		ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
+		ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
 		IInvolvedParty<?, ?> deviceIP = null;
 		try
 		{
@@ -284,13 +283,13 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		profileServiceDTO.setInvolvedParty(newIp);
 		profileServiceDTO.setIdentityToken(UUID.fromString(newIp.getId()));
 		
-		IUserSession<?> session = GuiceContext.get(IUserSession.class);
+		IUserSession<?> session = com.guicedee.client.IGuiceContext.get(IUserSession.class);
 		session.setInvolvedParty(newIp);
 		
 		sessionMasterService.updateSession(newIp, session, system, identityToken);
 		sessionMasterService.removeCache(newIp);
 		
-		ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
+		ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
 		
 		dto.setEnterprise(enterprise);
 		dto.setInvolvedParty(newIp);
@@ -311,7 +310,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		
 		session.addValue(IDENTITY_SESSION_NAME, dto);
-		UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
+		UserSecurityDTO us = com.guicedee.client.IGuiceContext.get(UserSecurityDTO.class);
 		us.setLoggedIn(true)
 		  .setLoginExpiresOn(rememberMe
 				  ? LocalDateTime.MAX
@@ -333,9 +332,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	                             @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
 	                             @Party("SystemPerformed") ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
-		IUserSession<?> session = GuiceContext.get(IUserSession.class);
+		IUserSession<?> session = com.guicedee.client.IGuiceContext.get(IUserSession.class);
 		
-		UserSecurityDTO us = GuiceContext.get(UserSecurityDTO.class);
+		UserSecurityDTO us = com.guicedee.client.IGuiceContext.get(UserSecurityDTO.class);
 		us.setRememberMe(false);
 		us.setLoggedIn(false);
 		us.setLoginExpiresOn(com.entityassist.RootEntity.getNow());
@@ -373,7 +372,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		//ActivityMasterConfiguration.get().setSecurityEnabled(false);
 		IInvolvedParty<?, ?> newIp;
 		
-		ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
+		ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
 		
 		newIp = dto.findInvolvedParty();
 		
@@ -500,7 +499,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			sb.append(jsonObject);
 		}
 		
-		IAddressService<?> addressService = GuiceContext.get(IAddressService.class);
+		IAddressService<?> addressService = com.guicedee.client.IGuiceContext.get(IAddressService.class);
 		String ipReal = servletRequest.getRemoteAddr();
 		if (ipReal.equalsIgnoreCase("0:0:0:0:0:0:0:1"))
 		{

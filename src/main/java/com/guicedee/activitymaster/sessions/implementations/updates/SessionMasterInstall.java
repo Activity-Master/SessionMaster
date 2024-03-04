@@ -13,7 +13,7 @@ import com.guicedee.activitymaster.sessions.services.classifications.SessionEven
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
 import static com.guicedee.activitymaster.sessions.services.classifications.SessionEventTypes.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.client.IGuiceContext.*;
 
 @SortedUpdate(sortOrder = 75, taskCount = 1)
 public class SessionMasterInstall implements ISystemUpdate

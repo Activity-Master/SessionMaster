@@ -3,7 +3,6 @@ package com.guicedee.activitymaster.sessions.implementations.providers;
 import com.google.inject.Provider;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
-import com.guicedee.guicedinjection.GuiceContext;
 
 public class UserSecurityProvider
 		implements Provider<UserSecurityDTO>
@@ -11,7 +10,7 @@ public class UserSecurityProvider
 	@Override
 	public UserSecurityDTO get()
 	{
-		IUserSession<?> session = GuiceContext.get(IUserSession.class);
+		IUserSession<?> session = com.guicedee.client.IGuiceContext.get(IUserSession.class);
 		if (session == null)
 		{
 			return null;

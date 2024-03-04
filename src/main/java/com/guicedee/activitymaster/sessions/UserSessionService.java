@@ -17,24 +17,23 @@ import com.guicedee.activitymaster.fsdm.client.services.exceptions.ResourceItemE
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
-import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedpersistence.db.annotations.Transactional;
-import javax.cache.annotation.*;
 import lombok.extern.java.Log;
 
+import javax.cache.annotation.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.ResourceItemTypes.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.client.IGuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @Log
 public class UserSessionService
 		implements IUserSessionService<UserSessionService>
 {
-	private final ObjectMapper mapper = GuiceContext.get(ObjectMapper.class);
+	private final ObjectMapper mapper = com.guicedee.client.IGuiceContext.get(ObjectMapper.class);
 	private final TypeFactory typeFactory = mapper.getTypeFactory();
 	private final MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, String.class);
 	
@@ -167,7 +166,7 @@ public class UserSessionService
 				log.finer("Session has no involved party. First session call?");
 				return session;
 			}
-			IResourceItemService<?> resourceItemService = GuiceContext.get(IResourceItemService.class);
+			IResourceItemService<?> resourceItemService = com.guicedee.client.IGuiceContext.get(IResourceItemService.class);
 			var resourceItem
 					= resourceItemService.findByUUID(original.getResourceItemID());
 			resourceItem.expire();
@@ -202,7 +201,7 @@ public class UserSessionService
 			{
 				sessionString = "{}";
 			}
-			IResourceItemService<?> resourceItemService = GuiceContext.get(IResourceItemService.class);
+			IResourceItemService<?> resourceItemService = com.guicedee.client.IGuiceContext.get(IResourceItemService.class);
 			var resourceItem =
 					resourceItemService.findByUUID(session.getResourceItemID());
 			if (resourceItem != null)

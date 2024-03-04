@@ -15,7 +15,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.client.IGuiceContext.*;
 import static java.time.temporal.ChronoUnit.*;
 
 @JsonInclude(JsonInclude.Include.ALWAYS)

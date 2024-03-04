@@ -7,7 +7,6 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enter
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.*;
-import com.guicedee.guicedinjection.GuiceContext;
 import lombok.extern.java.Log;
 
 import java.util.UUID;
@@ -34,7 +33,7 @@ public class UserSessionProvider
 	{
 		if (sessionMasterService == null)
 		{
-			GuiceContext.inject()
+			com.guicedee.client.IGuiceContext.instance().inject()
 			            .injectMembers(this);
 		}
 		if (enterprise.isFake())
@@ -42,7 +41,7 @@ public class UserSessionProvider
 			return null;
 		}
 	
-		UUID localStorageKey = GuiceContext.get(Key.get(UUID.class, Names.named("localstorage")));
+		UUID localStorageKey = com.guicedee.client.IGuiceContext.get(Key.get(UUID.class, Names.named("localstorage")));
 		if (localStorageKey == null)
 		{
 			//this call does not have any local storage attached? Perhaps from a web call?
@@ -60,8 +59,8 @@ public class UserSessionProvider
 				
 				if (byUUID == null)
 				{
-					ISessionLoginService<?> sessionLoginService = GuiceContext.get(ISessionLoginService.class);
-					ProfileServiceDTO<?> dto = GuiceContext.get(ProfileServiceDTO.class);
+					ISessionLoginService<?> sessionLoginService = com.guicedee.client.IGuiceContext.get(ISessionLoginService.class);
+					ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
 					ProfileServiceDTO<?> profileServiceDTO = sessionLoginService.loginVisitor(dto, getISystem(SessionMasterSystemName), getISystemToken(SessionMasterSystemName));
 					byUUID = profileServiceDTO.findInvolvedParty();
 				}
