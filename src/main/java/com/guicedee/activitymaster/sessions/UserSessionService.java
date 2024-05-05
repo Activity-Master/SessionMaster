@@ -6,9 +6,9 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import com.guicedee.activitymaster.fsdm.client.services.IRelationshipValue;
 import com.guicedee.activitymaster.fsdm.client.services.IResourceItemService;
-import com.guicedee.activitymaster.fsdm.client.services.annotations.ActivityMasterDB;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceData;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceItem;
@@ -17,7 +17,6 @@ import com.guicedee.activitymaster.fsdm.client.services.exceptions.ResourceItemE
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
-import com.guicedee.guicedpersistence.db.annotations.Transactional;
 import lombok.extern.java.Log;
 
 import javax.cache.annotation.*;
@@ -49,7 +48,7 @@ public class UserSessionService
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache")
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	@Transactional()
 	public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		try
@@ -126,7 +125,7 @@ public class UserSessionService
 		return session;
 	}
 	
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	@Transactional()
 	Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> saveNewSessionResourceItem(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, String sessionString, IResourceItemService<?> resourceItemService, java.util.UUID[] identityToken)
 	{
 		Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem;
@@ -155,7 +154,7 @@ public class UserSessionService
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache", skipGet = true)
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	@Transactional()
 	public IUserSession<?> expireSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		IUserSession<?> session = original;
@@ -186,7 +185,7 @@ public class UserSessionService
 	
 	@Override
 	@CacheResult(cacheName = "SessionsCache", skipGet = true)
-	@Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+	@Transactional()
 	public IUserSession<?> updateSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		try

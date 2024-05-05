@@ -33,7 +33,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.mapstruct</groupId>
+            <groupId>com.guicedee.services</groupId>
             <artifactId>mapstruct</artifactId>
         </dependency>
 
