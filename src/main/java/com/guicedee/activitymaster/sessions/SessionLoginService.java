@@ -6,6 +6,7 @@ import com.google.inject.name.Named;
 import com.google.inject.persist.Transactional;
 import com.guicedee.activitymaster.fsdm.client.services.*;
 import com.guicedee.activitymaster.fsdm.client.services.annotations.*;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.IWarehouseTable;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.classifications.IClassification;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
@@ -208,7 +209,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 				involvedPartyIdentificationType.get()
 				                               .archive(system, identityToken);
 			}
-			deviceIP.addChild(foundParty, DeviceUsedBy.toString(), webClientID, system, identityToken);
+			deviceIP.addChild((IWarehouseTable<?, ?, String, ?>) foundParty, DeviceUsedBy.toString(), webClientID, system, identityToken);
 			foundParty.addOrUpdateInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
 					webClientID, webClientID,
 					system, identityToken);
@@ -250,8 +251,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			idWebClient.get()
 			           .archive(system, identityToken);
-			deviceIP.archiveChild(idWebClient.get()
-			                                 .getPrimary(), DeviceUsedBy.toString(), null, system, identityToken);
+			deviceIP.archiveChild((IWarehouseTable<?, ?, String, ?>) idWebClient.get()
+			                                                                    .getPrimary(), DeviceUsedBy.toString(), null, system, identityToken);
 		}
 		
 		String uuid = profileServiceDTO.getWebClientUUID()

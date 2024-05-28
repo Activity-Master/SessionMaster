@@ -69,7 +69,7 @@ public class UserSessionService
 			}
 			IResourceItem<?, ?> secondary = resourceItem.get()
 			                                            .getSecondary();
-			Optional<IResourceData<?, ?>> data = secondary.getDataRow(identityToken);
+			Optional<IResourceData<?, ?,?>> data = secondary.getDataRow(identityToken);
 			String currentSessionValue = "";
 			if (data.isPresent())
 			{
