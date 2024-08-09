@@ -412,10 +412,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 				.setWebClientUUID(userRegistrationDTO.getWebClientUUID())
 				.setIdentityToken(UUID.fromString(newIp.getId()));
 		confirmationKeyDTO.setConfirmationKey(String.valueOf(UUID.randomUUID()));
-		IRelationshipValue<?, IClassification<?, ?>, ?> x =
-				newIp.addOrUpdateClassification(ConfirmationKey, null, confirmationKeyDTO.getConfirmationKey() + "", system, this.identityToken);
-		
-		x.expire(Duration.of(2, HOURS), this.identityToken);
+		newIp.addOrUpdateClassification(ConfirmationKey, null, confirmationKeyDTO.getConfirmationKey() + "", system, this.identityToken);
+		newIp.findClassification(ConfirmationKey,system,identityToken).ifPresent(x->x.expire(Duration.of(2, HOURS), this.identityToken));
 		return confirmationKeyDTO;
 	}
 	
