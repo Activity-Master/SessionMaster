@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -131,7 +132,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Transactional()
-	private IInvolvedParty<?, ?> authenticate(UserLoginDTO<?> loginDTO)
+	IInvolvedParty<?, ?> authenticate(UserLoginDTO<?> loginDTO)
 	{
 		return passwordsService.findByUsernameAndPassword(loginDTO.getUserName(),
 				loginDTO.getPassword(),
@@ -435,7 +436,18 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			Pair<String, String> deviceIDType = new Pair<>();
 			deviceIDType.setKey(IdentificationTypeWebClientUUID.toString())
 			            .setValue(webClientUUID);
-			newIp = involvedPartyService.create(system.get(), deviceIDType, false, identityToken);
+			try
+			{
+				newIp = involvedPartyService.create(system.get(), deviceIDType, false, identityToken).get();
+			}
+			catch (InterruptedException e)
+			{
+				throw new RuntimeException(e);
+			}
+			catch (ExecutionException e)
+			{
+				throw new RuntimeException(e);
+			}
 			newIp.addOrReuseInvolvedPartyType(NoClassification.toString(), deviceType, webClientUUID, system.get(), identityToken);
 		}
 		return newIp;
