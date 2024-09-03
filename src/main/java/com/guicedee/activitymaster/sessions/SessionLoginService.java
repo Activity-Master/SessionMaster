@@ -86,7 +86,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			identityToken = new UUID[]{this.identityToken};
 		}
-		ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
+		ProfileServiceDTO<?> dto = profileServiceDTO;
 		IInvolvedParty<?, ?> iInvolvedParty = involvedPartyService.get();
 		IInvolvedParty<?, ?> deviceIP = iInvolvedParty.builder()
 		                                              .findByType(TypeDevice.toString(), dto.getWebClientUUID()
@@ -149,7 +149,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			identityToken = new UUID[]{this.identityToken};
 		}
-		ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
+		ProfileServiceDTO<?> dto = profileServiceDTO;
+		if (dto.getWebClientUUID() == null)
+		{
+			dto.setWebClientUUID(UUID.randomUUID());
+		}
 		IInvolvedParty<?, ?> deviceIP = null;
 		try
 		{
@@ -284,14 +288,29 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		}
 		profileServiceDTO.setInvolvedParty(newIp);
 		profileServiceDTO.setIdentityToken(UUID.fromString(newIp.getId()));
+		ProfileServiceDTO<?> dto = profileServiceDTO;
+		try
+		{
+			IUserSession<?> session = sessionMasterService.getSession(newIp,system,identityToken);// com.guicedee.client.IGuiceContext.get(IUserSession.class);
+			session.setInvolvedParty(newIp);
+			session.addValue(IDENTITY_SESSION_NAME, dto);
+			UserSecurityDTO us = new UserSecurityDTO().setLoggedIn(true).setRememberMe(true);
+			us.setLoggedIn(true)
+			  .setLoginExpiresOn(rememberMe
+					  ? LocalDateTime.MAX
+					  : com.entityassist.RootEntity.getNow()
+					                               .plusMinutes(20))
+			  .setRememberMe(rememberMe);
+			session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
+			session.addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(newIp, system, identityToken));
+			sessionMasterService.updateSession(newIp, session, system, identityToken);
+			sessionMasterService.removeCache(newIp);
+		}catch (Throwable e)
+		{
+			log.log(Level.SEVERE,"Cannot create user session",e);
+		}
 		
-		IUserSession<?> session = com.guicedee.client.IGuiceContext.get(IUserSession.class);
-		session.setInvolvedParty(newIp);
 		
-		sessionMasterService.updateSession(newIp, session, system, identityToken);
-		sessionMasterService.removeCache(newIp);
-		
-		ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
 		
 		dto.setEnterprise(enterprise);
 		dto.setInvolvedParty(newIp);
@@ -309,20 +328,6 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			log.log(Level.SEVERE,"Session Master cannot update DTO from profile",e);
 		}
-		
-		
-		session.addValue(IDENTITY_SESSION_NAME, dto);
-		UserSecurityDTO us = com.guicedee.client.IGuiceContext.get(UserSecurityDTO.class);
-		us.setLoggedIn(true)
-		  .setLoginExpiresOn(rememberMe
-				  ? LocalDateTime.MAX
-				  : com.entityassist.RootEntity.getNow()
-				                               .plusMinutes(20))
-		  .setRememberMe(rememberMe);
-		session.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-		session.addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(newIp, system, identityToken));
-		
-		sessionMasterService.updateSession(newIp, session, system, identityToken);
 	}
 	
 	@InvolvedPartyEvent(value = Added)

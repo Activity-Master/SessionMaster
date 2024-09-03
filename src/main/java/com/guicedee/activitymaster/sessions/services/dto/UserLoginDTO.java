@@ -1,8 +1,6 @@
 package com.guicedee.activitymaster.sessions.services.dto;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.NullSerializer;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 
 import java.io.Serializable;
@@ -17,9 +15,7 @@ public class UserLoginDTO<J extends UserLoginDTO<J>>
 		extends ProfileServiceDTO<J>
 		implements Serializable
 {
-	@JsonSerialize(using = NullSerializer.class)
 	private String userName;
-	@JsonSerialize(using = NullSerializer.class)
 	private String password;
 	private boolean rememberMe;
 	
