@@ -17,6 +17,7 @@ import com.guicedee.activitymaster.fsdm.client.services.exceptions.ResourceItemE
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
+import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 
 import javax.cache.annotation.*;
@@ -125,18 +126,27 @@ public class UserSessionService
 		return session;
 	}
 	
-	@Transactional()
+	@SneakyThrows
+    @Transactional()
 	Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> saveNewSessionResourceItem(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, String sessionString, IResourceItemService<?> resourceItemService, java.util.UUID[] identityToken)
 	{
-		Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem;
-		
 		var newResource =
 				resourceItemService.create(JsonPacket.toString(), "application/json", system, identityToken);
 		
-		newResource.updateData(sessionString.getBytes(), system, identityToken);
-		resourceItem = Optional.of(involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), newResource, "", system, identityToken));
-		
-		return resourceItem;
+		newResource.whenCompleteAsync((ri,error)->{
+			if (error!=null) {
+				log.log(Level.SEVERE, "Error creating new resource", error);
+			}else {
+				ri.updateData(sessionString.getBytes(), system, identityToken);
+			}
+		});
+		newResource.whenCompleteAsync((ri,error)->{
+            if (error == null) {
+                involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), ri, "", system, identityToken);
+            }
+        });
+
+		return (Optional) Optional.of(newResource.get());
 	}
 	
 	@Override
