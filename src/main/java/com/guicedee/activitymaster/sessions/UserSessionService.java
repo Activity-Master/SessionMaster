@@ -61,7 +61,6 @@ public class UserSessionService
 			}
 			
 			String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
-			
 			Optional<? extends IRelationshipValue<?, IResourceItem<?, ?>, ?>> resourceItem = involvedParty.
 					findResourceItem(SessionClassifications.SessionObject.toString(), null, system, false, false, identityToken);
 			if (resourceItem.isEmpty())
