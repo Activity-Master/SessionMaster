@@ -23,6 +23,7 @@ import com.guicedee.activitymaster.sessions.services.dto.*;
 import com.guicedee.guicedinjection.pairing.Pair;
 import com.guicedee.services.jsonrepresentation.IJsonRepresentation;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -214,7 +215,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 				involvedPartyIdentificationType.get()
 				                               .archive(system, identityToken);
 			}
-			deviceIP.addChild((IWarehouseTable<?, ?, String, ?>) foundParty, DeviceUsedBy.toString(), webClientID, system, identityToken);
+			deviceIP.addChild((IWarehouseTable<?, ?, ? extends Serializable, ?>) foundParty, DeviceUsedBy.toString(), webClientID, system, identityToken);
 			foundParty.addOrUpdateInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
 					webClientID, webClientID,
 					system, identityToken);
@@ -256,8 +257,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			idWebClient.get()
 			           .archive(system, identityToken);
-			deviceIP.archiveChild((IWarehouseTable<?, ?, String, ?>) idWebClient.get()
-			                                                                    .getPrimary(), DeviceUsedBy.toString(), null, system, identityToken);
+			deviceIP.archiveChild((IWarehouseTable)idWebClient.get().getPrimary(), DeviceUsedBy.toString(), null, system, identityToken);
 		}
 		
 		String uuid = profileServiceDTO.getWebClientUUID()
