@@ -100,7 +100,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			deviceIP = createDeviceIP(profileServiceDTO);
 			//new device there will be nothing else ever
 			profileServiceDTO.setInvolvedParty(deviceIP);
-			profileServiceDTO.setIdentityToken(UUID.fromString(deviceIP.getId()));
+			profileServiceDTO.setIdentityToken(deviceIP.getId());
 			/*configureFromReadableUserAgent(deviceIP, com.guicedee.client.IGuiceContext.get(ReadableUserAgent.class), system, identityToken);
 			try
 			{
@@ -118,13 +118,13 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		{
 			//new device there will be nothing else ever
 			profileServiceDTO.setInvolvedParty(deviceIP);
-			profileServiceDTO.setIdentityToken(UUID.fromString(deviceIP.getId()));
+			profileServiceDTO.setIdentityToken(deviceIP.getId());
 			foundIPCurrentOnDevice = deviceIP;
 		}
 		else
 		{
 			profileServiceDTO.setInvolvedParty(foundIPCurrentOnDevice);
-			profileServiceDTO.setIdentityToken(UUID.fromString(foundIPCurrentOnDevice.getId()));
+			profileServiceDTO.setIdentityToken(foundIPCurrentOnDevice.getId());
 		}
 		updateLatestVisit(foundIPCurrentOnDevice, identityToken);
 		
@@ -287,7 +287,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			identityToken = new UUID[]{this.identityToken};
 		}
 		profileServiceDTO.setInvolvedParty(newIp);
-		profileServiceDTO.setIdentityToken(UUID.fromString(newIp.getId()));
+		profileServiceDTO.setIdentityToken(newIp.getId());
 		ProfileServiceDTO<?> dto = profileServiceDTO;
 		try
 		{
@@ -350,7 +350,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		sessionMasterService.updateSession(involvedParty, session, system, identityToken);
 		
 		//set profile service dto to the device IP
-		profileServiceDTO.setIdentityToken(UUID.fromString(deviceIP.getId()));
+		profileServiceDTO.setIdentityToken(deviceIP.getId());
 		profileServiceDTO.setInvolvedParty(deviceIP);
 		
 		session.setInvolvedParty(deviceIP);
@@ -416,7 +416,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		UserConfirmationKeyDTO<?> confirmationKeyDTO = new UserConfirmationKeyDTO<>()
 				.setWebClientUUID(userRegistrationDTO.getWebClientUUID())
-				.setIdentityToken(UUID.fromString(newIp.getId()));
+				.setIdentityToken(newIp.getId());
 		confirmationKeyDTO.setConfirmationKey(String.valueOf(UUID.randomUUID()));
 		newIp.addOrUpdateClassification(ConfirmationKey, null, confirmationKeyDTO.getConfirmationKey() + "", system, this.identityToken);
 		newIp.findClassification(ConfirmationKey,system,identityToken).ifPresent(x->x.expire(Duration.of(2, HOURS), this.identityToken));
@@ -497,7 +497,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		IInvolvedParty<?, ?> ip = passwordsService.findByUsernameAndPassword(userLoginDTO.getUserName(), userLoginDTO.getPassword(),
 				system.get(), true, identityToken);
-		userLoginDTO = new UserLoginDTO<>().setIdentityToken(UUID.fromString(ip.getId()));
+		userLoginDTO = new UserLoginDTO<>().setIdentityToken(ip.getId());
 		return userLoginDTO;
 	}
 	

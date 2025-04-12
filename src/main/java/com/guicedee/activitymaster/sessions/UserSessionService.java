@@ -76,21 +76,23 @@ public class UserSessionService
             {
                 String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
                 saveNewSessionResourceItem(involvedParty, system, sessionString, resourceItemService, identityToken)
-                .onSuccess(result -> {
-                    promise.complete(result);
-                })
-                        .onFailure(error->{
+                        .onSuccess(result -> {
+                            promise.complete(result);
+                        })
+                        .onFailure(error -> {
                             log.log(Level.SEVERE, "Error saving new session resource item", error);
                             promise.fail(error);
                             return;
                         });
-            }else {
+            }
+            else
+            {
                 promise.complete((IRelationshipValue) resourceItem.get());
             }
             future.onSuccess(res -> {
                 IResourceItem<?, ?> secondary = (IResourceItem<?, ?>) res.getSecondary();
                 Optional<IResourceData<?, ?, ?>> data = secondary.getDataRow(identityToken);
-                String  currentSessionValue = new String(data.get()
+                String currentSessionValue = new String(data.get()
                         .getResourceItemData());
                 String sessionString;
                 if (!Strings.isNullOrEmpty(currentSessionValue))
@@ -117,9 +119,8 @@ public class UserSessionService
                     }
                 }
 
-                session.setResourceItemID(UUID.fromString(secondary.getId()));
-                session.setDataID(UUID.fromString(data.get()
-                        .getId()));
+                session.setResourceItemID(secondary.getId());
+                session.setDataID(data.get().getId());
             });
 
         }
@@ -144,7 +145,7 @@ public class UserSessionService
 
         newResource.onSuccess((ri) -> {
             vertx.executeBlocking(TransactionalCallable.of(() -> {
-                var rid =  involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), ri, "", system, identityToken);
+                var rid = involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), ri, "", system, identityToken);
                 promise.complete(rid);
                 return true;
             }, true), true);
