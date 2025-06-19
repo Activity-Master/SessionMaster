@@ -130,7 +130,7 @@ public class UserSessionService
         }
         if (session != null)
         {
-            session.setSystem(system);
+            //session.setSystem(system);
             session.setInvolvedParty(involvedParty);
         }
         return session;
@@ -191,7 +191,7 @@ public class UserSessionService
         }
         if (session != null)
         {
-            session.setSystem(system);
+            //session.setSystem(system);
             session.setInvolvedParty(involvedParty);
         }
         return session;
@@ -244,7 +244,7 @@ public class UserSessionService
         }
         if (session != null)
         {
-            session.setSystem(system);
+         //   session.setSystem(system);
             session.setInvolvedParty(involvedParty);
         }
         return session;

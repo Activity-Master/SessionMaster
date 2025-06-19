@@ -106,7 +106,7 @@ public class UserSecurityDTO
 	{
 		IUserSession<?> session = get(IUserSession.class);
 		
-		ISystems<?, ?> system = session.getSystem();
+		//ISystems<?, ?> system = session.getSystem();
 		if (!session.hasValue(USER_SECURITY_SESSION_NAME))
 		{
 			return false;

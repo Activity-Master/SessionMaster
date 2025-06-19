@@ -5,10 +5,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
+import com.guicedee.activitymaster.fsdm.client.services.ISystemsService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import javax.cache.annotation.CacheKey;
+
+import com.guicedee.client.IGuiceContext;
 import lombok.extern.java.Log;
 
 import java.io.Serial;
@@ -31,7 +34,7 @@ public class UserSession
 	private final Map<String, String> values = new LinkedHashMap<>();
 	
 	private IInvolvedParty<?,?> involvedParty;
-	private ISystems<?,?> system;
+	//private ISystems<?,?> system;
 	
 	private UUID resourceItemID;
 	private UUID dataID;
@@ -152,13 +155,13 @@ public class UserSession
 		}
 		return involvedParty;
 	}
-	
+/*
 	@Override
 	public ISystems<?,?> getSystem()
 	{
 		if (system == null && involvedParty != null)
 		{
-			system = involvedParty.getOriginalSourceSystemID();
+			system = IGuiceContext.get(ISystemsService.class).getActivityMaster(null,null,null);
 		}
 		return system;
 	}
@@ -168,7 +171,7 @@ public class UserSession
 	{
 		this.system = system;
 		return this;
-	}
+	}*/
 	
 	@Override
 	public Map<String, String> getValues()

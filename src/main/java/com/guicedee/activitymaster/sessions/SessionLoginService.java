@@ -354,7 +354,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		profileServiceDTO.setInvolvedParty(deviceIP);
 		
 		session.setInvolvedParty(deviceIP);
-		session.setSystem(system);
+		//session.setSystem(system);
 		
 		sessionMasterService.updateSession(deviceIP, session, system, identityToken);
 	}

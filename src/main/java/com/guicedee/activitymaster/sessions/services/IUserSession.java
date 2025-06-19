@@ -40,10 +40,10 @@ public interface IUserSession<J extends IUserSession<J>>
 	
 	IInvolvedParty<?, ?> getInvolvedParty();
 	
-	ISystems<?, ?> getSystem();
+/*	ISystems<?, ?> getSystem();
 	
 	IUserSession<?> setSystem(ISystems<?, ?> system);
-	
+	*/
 	Map<String, String> getValues();
 	
 	UUID getResourceItemID();
