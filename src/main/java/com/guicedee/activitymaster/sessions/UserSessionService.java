@@ -180,14 +180,20 @@ public class UserSessionService
                 return session;
             }
             IResourceItemService<?> resourceItemService = com.guicedee.client.IGuiceContext.get(IResourceItemService.class);
-            var resourceItem
-                    = resourceItemService.findByUUID(original.getResourceItemID());
-            resourceItem.expire();
-            resourceItem.getDataRow();
+
+            // Since findByUUID now returns a Future, we need to handle it differently
+            // This is a blocking call, which is not ideal but necessary for backward compatibility
+            var resourceItemFuture = resourceItemService.findByUUID(original.getResourceItemID());
+            IResourceItem<?, ?> resourceItem = resourceItemFuture.toCompletionStage().toCompletableFuture().join();
+
+            if (resourceItem != null) {
+                resourceItem.expire();
+                resourceItem.getDataRow();
+            }
         }
         catch (Exception e)
         {
-            log.log(Level.SEVERE, "Error serializing the inecoming object to retrieve a session", e);
+            log.log(Level.SEVERE, "Error serializing the incoming object to retrieve a session", e);
         }
         if (session != null)
         {
@@ -215,8 +221,12 @@ public class UserSessionService
                 sessionString = "{}";
             }
             IResourceItemService<?> resourceItemService = com.guicedee.client.IGuiceContext.get(IResourceItemService.class);
-            var resourceItem =
-                    resourceItemService.findByUUID(session.getResourceItemID());
+
+            // Since findByUUID now returns a Future, we need to handle it differently
+            // This is a blocking call, which is not ideal but necessary for backward compatibility
+            var resourceItemFuture = resourceItemService.findByUUID(session.getResourceItemID());
+            IResourceItem<?, ?> resourceItem = resourceItemFuture.toCompletionStage().toCompletableFuture().join();
+
             if (resourceItem != null)
             {
                 var dataRow = resourceItem.getDataRow();
