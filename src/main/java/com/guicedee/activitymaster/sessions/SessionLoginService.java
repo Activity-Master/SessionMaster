@@ -80,7 +80,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 //	private ProfileServiceDTO<?> dto;
 	
 	@Override
-	@Transactional()
+	//@Transactional()
 	public ProfileServiceDTO<?> loginVisitor(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
@@ -132,7 +132,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return profileServiceDTO;
 	}
 	
-	@Transactional()
+	//@Transactional()
 	IInvolvedParty<?, ?> authenticate(UserLoginDTO<?> loginDTO)
 	{
 		return passwordsService.findByUsernameAndPassword(loginDTO.getUserName(),
@@ -143,7 +143,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
-	@Transactional()
+	//@Transactional()
 	public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
@@ -237,7 +237,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
-	@Transactional()
+	//@Transactional()
 	public ProfileServiceDTO<?> logoutUser(ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws ProfileServiceException
 	{
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
@@ -276,7 +276,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@InvolvedPartyEvent(Added)
 	@LogItemEvent(Added)
 	@Override
-	@Transactional()
+	//@Transactional()
 	public void setUserLoggedIn(@Party("UserLoggingIn") IInvolvedParty<?, ?> newIp,
 	                            @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
 	                            boolean rememberMe,
@@ -333,7 +333,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@InvolvedPartyEvent(value = Added)
 	@LogItemEvent(value = Added)
 	@Override
-	@Transactional()
+	//@Transactional()
 	public void setUserLoggedOut(@Party("UserLoggedOut") IInvolvedParty<?, ?> involvedParty,
 	                             @Party("DeviceUsedBy") IInvolvedParty<?, ?> deviceIP,
 	                             @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
@@ -360,7 +360,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
-	@Transactional()
+	//@Transactional()
 	public UserConfirmationKeyDTO<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, java.util.UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException
 	{
 		IInvolvedParty<?, ?> ipExists = involvedPartyService.get()
@@ -423,7 +423,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return confirmationKeyDTO;
 	}
 	
-	@Transactional()
+	//@Transactional()
 	IInvolvedParty<?, ?> createDeviceIP(ProfileServiceDTO<?> profileServiceDTO)
 	{
 		String webClientUUID = profileServiceDTO.getWebClientUUID()
@@ -458,11 +458,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return newIp;
 	}
 	
-	//@Transactional()
+	////@Transactional()
 	IInvolvedParty<?, ?> updateLatestVisit(IInvolvedParty<?, ?> newIp,
 	                                       java.util.UUID... identityToken)
 	{
-		String lastVisit = com.entityassist.querybuilder.QueryBuilderSCD.convertToUTCDateTime(com.entityassist.RootEntity.getNow()).format(DateTimeFormatter.ISO_DATE);
+		String lastVisit = convertToUTCDateTime(com.entityassist.RootEntity.getNow()).format(DateTimeFormatter.ISO_DATE);
 		newIp.addOrUpdateClassification(LastVisitTime,
 				null,
 				lastVisit,
@@ -482,7 +482,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return passwordsService.doesUsernameExist(userLoginDTO.getUserName(), system);
 	}
 	
-	@Transactional()
+	//@Transactional()
 	@Override
 	public UserLoginDTO<?> verifyPasswordForUser(UserLoginDTO<?> userLoginDTO, IEnterprise<?, ?> enterprise, java.util.UUID... identityToken)
 	{
@@ -501,7 +501,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return userLoginDTO;
 	}
 	
-	//@Transactional()
+	////@Transactional()
 	/*IInvolvedParty<?, ?> configureFromHTTPServletRequest(UserDTO<?> dto, IInvolvedParty<?, ?> ip, ISystems<?, ?> profileSystem, HttpServletRequest servletRequest, IEnterprise<?, ?> enterprise)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -548,7 +548,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		return ip;
 	}
 	
-	//@Transactional()
+	////@Transactional()
 	IInvolvedParty<?, ?> configureFromReadableUserAgent(IInvolvedParty<?, ?> ip, ReadableUserAgent readableUserAgent, ISystems<?, ?> profileSystem, java.util.UUID... identityToken)
 	{
 		ip.addOrReuseClassification(BrowserDeviceCategory, readableUserAgent.getDeviceCategory()

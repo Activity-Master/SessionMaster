@@ -16,7 +16,7 @@ import com.guicedee.activitymaster.fsdm.client.services.exceptions.ResourceItemE
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
-import com.guicedee.guicedpersistence.lambda.TransactionalCallable;
+import com.guicedee.activitymaster.fsdm.db.entityassist.TransactionalCallable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -55,7 +55,7 @@ public class UserSessionService
 
     @Override
     @CacheResult(cacheName = "SessionsCache")
-    @Transactional()
+    //@Transactional()
     public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         try
@@ -136,7 +136,7 @@ public class UserSessionService
         return session;
     }
 
-    @Transactional()
+    //@Transactional()
     Future<IRelationshipValue<?, IResourceItem<?, ?>, ?>> saveNewSessionResourceItem(IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, String sessionString, IResourceItemService<?> resourceItemService, java.util.UUID[] identityToken) throws TimeoutException
     {
         Promise<IRelationshipValue<?, IResourceItem<?, ?>, ?>> promise = Promise.promise();
@@ -168,7 +168,7 @@ public class UserSessionService
 
     @Override
     @CacheResult(cacheName = "SessionsCache", skipGet = true)
-    @Transactional()
+    //@Transactional()
     public IUserSession<?> expireSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         IUserSession<?> session = original;
@@ -205,7 +205,7 @@ public class UserSessionService
 
     @Override
     @CacheResult(cacheName = "SessionsCache", skipGet = true)
-    @Transactional()
+    //@Transactional()
     public IUserSession<?> updateSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         try
