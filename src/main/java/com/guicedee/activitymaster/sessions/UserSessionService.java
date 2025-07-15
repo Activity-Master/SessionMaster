@@ -47,14 +47,14 @@ public class UserSessionService
     private Vertx vertx;
 
     @Override
-    @CacheResult(cacheName = "SessionsCache")
+    //@CacheResult(cacheName = "SessionsCache")
     public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         return getSession(involvedParty, new UserSession(), system, identityToken);
     }
 
     @Override
-    @CacheResult(cacheName = "SessionsCache")
+    //@CacheResult(cacheName = "SessionsCache")
     //@Transactional()
     public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
@@ -154,7 +154,7 @@ public class UserSessionService
     }
 
     @Override
-    @CacheResult(cacheName = "SessionsCache", skipGet = true)
+    //@CacheResult(cacheName = "SessionsCache", skipGet = true)
     public IUserSession<?> updateCache(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         return original;
@@ -167,7 +167,7 @@ public class UserSessionService
     }
 
     @Override
-    @CacheResult(cacheName = "SessionsCache", skipGet = true)
+    //@CacheResult(cacheName = "SessionsCache", skipGet = true)
     //@Transactional()
     public IUserSession<?> expireSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
@@ -204,7 +204,7 @@ public class UserSessionService
     }
 
     @Override
-    @CacheResult(cacheName = "SessionsCache", skipGet = true)
+    //@CacheResult(cacheName = "SessionsCache", skipGet = true)
     //@Transactional()
     public IUserSession<?> updateSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
