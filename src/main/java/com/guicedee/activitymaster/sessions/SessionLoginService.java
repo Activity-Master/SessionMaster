@@ -3,7 +3,7 @@ package com.guicedee.activitymaster.sessions;
 import com.google.common.base.Strings;
 import com.google.inject.*;
 import com.google.inject.name.Named;
-import com.google.inject.persist.Transactional;
+//import com.google.inject.persist.Transactional;
 import com.guicedee.activitymaster.fsdm.client.services.*;
 import com.guicedee.activitymaster.fsdm.client.services.annotations.*;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.IWarehouseTable;

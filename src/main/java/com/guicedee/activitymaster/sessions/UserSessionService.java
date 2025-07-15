@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
-import com.google.inject.persist.Transactional;
+//import com.google.inject.persist.Transactional;
 import com.guicedee.activitymaster.fsdm.client.services.IRelationshipValue;
 import com.guicedee.activitymaster.fsdm.client.services.IResourceItemService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
