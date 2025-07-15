@@ -48,7 +48,7 @@ public class UserSessionService
 
     @Override
     //@CacheResult(cacheName = "SessionsCache")
-    public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, java.util.UUID... identityToken)
+    public IUserSession<?> getSession( IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         return getSession(involvedParty, new UserSession(), system, identityToken);
     }
@@ -56,7 +56,7 @@ public class UserSessionService
     @Override
     //@CacheResult(cacheName = "SessionsCache")
     //@Transactional()
-    public IUserSession<?> getSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
+    public IUserSession<?> getSession( IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         try
         {
@@ -155,21 +155,21 @@ public class UserSessionService
 
     @Override
     //@CacheResult(cacheName = "SessionsCache", skipGet = true)
-    public IUserSession<?> updateCache(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
+    public IUserSession<?> updateCache( IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         return original;
     }
 
     @Override
     @CacheRemove(cacheName = "SessionsCache")
-    public void removeCache(@CacheKey IInvolvedParty<?, ?> involvedParty)
+    public void removeCache( IInvolvedParty<?, ?> involvedParty)
     {
     }
 
     @Override
     //@CacheResult(cacheName = "SessionsCache", skipGet = true)
     //@Transactional()
-    public IUserSession<?> expireSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
+    public IUserSession<?> expireSession( IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         IUserSession<?> session = original;
         try
@@ -206,7 +206,7 @@ public class UserSessionService
     @Override
     //@CacheResult(cacheName = "SessionsCache", skipGet = true)
     //@Transactional()
-    public IUserSession<?> updateSession(@CacheKey IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
+    public IUserSession<?> updateSession( IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
     {
         try
         {

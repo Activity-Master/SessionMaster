@@ -9,7 +9,7 @@ import com.guicedee.activitymaster.fsdm.client.services.ISystemsService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
-import javax.cache.annotation.CacheKey;
+
 
 import com.guicedee.client.IGuiceContext;
 import lombok.extern.java.Log;
@@ -100,14 +100,14 @@ public class UserSession
 	}
 	
 	@Override
-	public IUserSession<?> removeValue(@CacheKey String key)
+	public IUserSession<?> removeValue( String key)
 	{
 		values.remove(key);
 		return this;
 	}
 	
 	@Override
-	public <T> T as(@CacheKey String key, Class<T> type)
+	public <T> T as( String key, Class<T> type)
 	{
 		String value = values.get(key);
 		try
