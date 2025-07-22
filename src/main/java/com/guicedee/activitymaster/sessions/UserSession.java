@@ -9,7 +9,7 @@ import com.guicedee.activitymaster.fsdm.client.services.ISystemsService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
-
+import io.smallrye.mutiny.Uni;
 
 import com.guicedee.client.IGuiceContext;
 import lombok.extern.java.Log;
@@ -100,14 +100,14 @@ public class UserSession
 	}
 	
 	@Override
-	public IUserSession<?> removeValue( String key)
+	public IUserSession<?> removeValue(String key)
 	{
 		values.remove(key);
 		return this;
 	}
 	
 	@Override
-	public <T> T as( String key, Class<T> type)
+	public <T> T as(String key, Class<T> type)
 	{
 		String value = values.get(key);
 		try
@@ -135,26 +135,45 @@ public class UserSession
 	}
 	
 	@Override
-	public IUserSession<?> setInvolvedParty(IInvolvedParty<?,?> involvedParty)
+	public Uni<IUserSession<?>> setInvolvedParty(IInvolvedParty<?,?> involvedParty)
 	{
 		this.involvedParty = involvedParty;
-		addValue("involved-party", involvedParty.getId()
-		                                        .toString());
-		return this;
+		addValue("involved-party", involvedParty.getId().toString());
+		
+		// Create a new Uni with explicit type
+		IUserSession<?> session = this;
+		return Uni.createFrom().item(session)
+		         .onFailure().invoke(error -> log.log(Level.SEVERE, "Error setting involved party: " + error.getMessage(), error))
+		         .map(result -> (IUserSession<?>) result);
 	}
 	
 	@Override
-	public IInvolvedParty<?,?> getInvolvedParty()
+	public Uni<IInvolvedParty<?,?>> getInvolvedParty()
 	{
-		if (involvedParty == null)
-		{
-			if (hasValue("involved-party"))
-			{
-				involvedParty = get(IInvolvedPartyService.class).findByID(UUID.fromString(as("involved-party", String.class)));
+		if (involvedParty != null) {
+			// Create a new Uni with explicit type
+			IInvolvedParty<?,?> party = this.involvedParty;
+			return Uni.createFrom().item(party);
+		}
+		
+		if (hasValue("involved-party")) {
+			try {
+				IInvolvedPartyService<?> service = get(IInvolvedPartyService.class);
+				UUID id = UUID.fromString(as("involved-party", String.class));
+				
+				// Get the involved party reactively
+				return service.findByID(id)
+					.onItem().invoke(party -> this.involvedParty = party)
+					.onFailure().invoke(error -> log.log(Level.SEVERE, "Error getting involved party: " + error.getMessage(), error));
+			} catch (Exception e) {
+				log.log(Level.SEVERE, "Error getting involved party: " + e.getMessage(), e);
+				return Uni.createFrom().failure(e);
 			}
 		}
-		return involvedParty;
+		
+		return Uni.createFrom().nullItem();
 	}
+	
 /*
 	@Override
 	public ISystems<?,?> getSystem()
@@ -203,4 +222,3 @@ public class UserSession
 		return this;
 	}
 }
-
