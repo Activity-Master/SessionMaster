@@ -82,7 +82,7 @@ public class UserSessionProvider
 				// Using the reactive find method instead of the blocking builder().find() approach
 				// This is still using .await().indefinitely() for backward compatibility,
 				// but it's a step towards making this code fully reactive in the future.
-				IInvolvedParty<?, ?> byUUID = involvedPartyService.find(localStorageKey)
+				IInvolvedParty<?, ?> byUUID = involvedPartyService.find(session, localStorageKey)
 				                                                  .await()
 				                                                  .indefinitely();
 				

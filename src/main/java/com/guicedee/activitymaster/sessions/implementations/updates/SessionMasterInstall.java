@@ -10,6 +10,7 @@ import com.guicedee.activitymaster.sessions.SessionMasterSystem;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications;
 import com.guicedee.activitymaster.sessions.services.classifications.SessionEventTypes;
 import io.vertx.core.Future;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
@@ -20,45 +21,45 @@ import static com.guicedee.client.IGuiceContext.*;
 public class SessionMasterInstall implements ISystemUpdate
 {
 	@Override
-	public Future<Boolean> update(IEnterprise<?,?> enterprise)
+	public Future<Boolean> update(Mutiny.Session session, IEnterprise<?,?> enterprise)
 	{
 		IClassificationService<?> classificationService = get(IClassificationService.class);
 
 		logProgress("Session Master", "Loading Default Session Classifications");
 		SessionMasterSystem systemM = get(SessionMasterSystem.class);
-		ISystems<?,?> system = systemM.getSystem(enterprise);
+		ISystems<?,?> system = systemM.getSystem(session, enterprise);
 
-		classificationService.create(SessionInformation, system);
+		classificationService.create(session, SessionInformation, system);
 
-		classificationService.create(SessionLastUpdateTime, system,SessionInformation);
-		classificationService.create(SessionClassifications.SessionObject, system,SessionInformation);
+		classificationService.create(session, SessionLastUpdateTime, system,SessionInformation);
+		classificationService.create(session, SessionClassifications.SessionObject, system,SessionInformation);
 
 
-		classificationService.create(SystemPerformed, system,SessionInformation);
-		classificationService.create(SessionClassifications.UserLoggedIn, system,SessionInformation);
-		classificationService.create(SessionClassifications.UserLoggedOut, system,SessionInformation);
-		classificationService.create(SessionClassifications.UserSessionExpired, system,SessionInformation);
+		classificationService.create(session, SystemPerformed, system,SessionInformation);
+		classificationService.create(session, SessionClassifications.UserLoggedIn, system,SessionInformation);
+		classificationService.create(session, SessionClassifications.UserLoggedOut, system,SessionInformation);
+		classificationService.create(session, SessionClassifications.UserSessionExpired, system,SessionInformation);
 
 
 
 		IEventService<?> eventsService = get(IEventService.class);
 
-		eventsService.createEventType(SiteVisit, system, systemM.getSystemToken(enterprise));
-		eventsService.createEventType(UserConfirmedAccount, system, systemM.getSystemToken(enterprise));
-		eventsService.createEventType(SessionEventTypes.UserLoggedIn, system, systemM.getSystemToken(enterprise));
-		eventsService.createEventType(SessionEventTypes.UserLoggedOut, system, systemM.getSystemToken(enterprise));
-		eventsService.createEventType(UserConfirmedAccount, system, systemM.getSystemToken(enterprise));
+		eventsService.createEventType(session, SiteVisit, system, systemM.getSystemToken(session, enterprise));
+		eventsService.createEventType(session, UserConfirmedAccount, system, systemM.getSystemToken(session, enterprise));
+		eventsService.createEventType(session, SessionEventTypes.UserLoggedIn, system, systemM.getSystemToken(session, enterprise));
+		eventsService.createEventType(session, SessionEventTypes.UserLoggedOut, system, systemM.getSystemToken(session, enterprise));
+		eventsService.createEventType(session, UserConfirmedAccount, system, systemM.getSystemToken(session, enterprise));
 
-		classificationService.create(DeviceUsedBy, system,SessionInformation);
+		classificationService.create(session, DeviceUsedBy, system,SessionInformation);
 
 
-		classificationService.create(LogonDetails, system,SessionInformation);
-		classificationService.create(LastLoginTime, system, LogonDetails);
-		classificationService.create(LastVisitTime, system, LogonDetails);
-		classificationService.create(ConfirmationKey, system, LogonDetails);
-		classificationService.create(UserRoles, system, LogonDetails);
-		classificationService.create(RememberMe, system, LogonDetails);
-		classificationService.create(LoggedOn, system, LogonDetails);
+		classificationService.create(session, LogonDetails, system,SessionInformation);
+		classificationService.create(session, LastLoginTime, system, LogonDetails);
+		classificationService.create(session, LastVisitTime, system, LogonDetails);
+		classificationService.create(session, ConfirmationKey, system, LogonDetails);
+		classificationService.create(session, UserRoles, system, LogonDetails);
+		classificationService.create(session, RememberMe, system, LogonDetails);
+		classificationService.create(session, LoggedOn, system, LogonDetails);
 
 		return Future.succeededFuture(true);
 	}

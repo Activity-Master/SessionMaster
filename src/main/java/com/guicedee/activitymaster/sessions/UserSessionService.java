@@ -5,11 +5,9 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
-import com.guicedee.activitymaster.fsdm.client.services.IRelationshipValue;
 import com.guicedee.activitymaster.fsdm.client.services.IResourceItemService;
 import com.guicedee.activitymaster.fsdm.client.services.ReactiveTransactionUtil;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceData;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceItem;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.fsdm.client.services.exceptions.ResourceItemException;
@@ -67,7 +65,7 @@ public class UserSessionService
 
         return ReactiveTransactionUtil.withTransaction(tx -> {
             // Find resource item
-            return involvedParty.findResourceItem(SessionClassifications.SessionObject.toString(), 
+            return involvedParty.findResourceItem(session, SessionClassifications.SessionObject.toString(),
                     null, system, false, false, identityToken)
                 .chain(resourceItem -> {
                     if (resourceItem == null) {
@@ -82,7 +80,7 @@ public class UserSessionService
                     } else {
                         // Use existing resource item
                         IResourceItem<?, ?> secondary = (IResourceItem<?, ?>) resourceItem.getSecondary();
-                        return secondary.getDataRow(identityToken)
+                        return secondary.getDataRow(session, identityToken)
                                 .map(data -> {
                                     String currentSessionValue = new String(data.getResourceItemData());
                                     
@@ -125,14 +123,14 @@ public class UserSessionService
             java.util.UUID[] identityToken,
             IUserSession<?> session)
     {
-        return resourceItemService.create(JsonPacket.toString(), "application/json", sessionString.getBytes(), system, identityToken)
+        return resourceItemService.create(session, JsonPacket.toString(), "application/json", sessionString.getBytes(), system, identityToken)
                 .chain(ri -> {
                     return ReactiveTransactionUtil.withTransaction(tx -> {
                         try {
-                            return involvedParty.addResourceItem(SessionClassifications.SessionObject.toString(), ri, "", system, identityToken)
+                            return involvedParty.addResourceItem(session, SessionClassifications.SessionObject.toString(), ri, "", system, identityToken)
                                 .chain(relationshipValue -> {
                                     IResourceItem<?, ?> secondary = (IResourceItem<?, ?>) relationshipValue.getSecondary();
-                                    return secondary.getDataRow(identityToken)
+                                    return secondary.getDataRow(session, identityToken)
                                             .map(data -> {
                                                 session.setResourceItemID(secondary.getId());
                                                 session.setDataID(data.getId());
@@ -169,12 +167,12 @@ public class UserSessionService
         
         IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
         
-        return resourceItemService.findByUUID(original.getResourceItemID())
+        return resourceItemService.findByUUID(session, original.getResourceItemID())
                 .chain(resourceItem -> {
                     if (resourceItem != null) {
                         return ReactiveTransactionUtil.withTransaction(session -> {
                             resourceItem.expire();
-                            return resourceItem.getDataRow()
+                            return resourceItem.getDataRow(session)
                                     .map(data -> original);
                         });
                     } else {
@@ -212,14 +210,14 @@ public class UserSessionService
         }).chain(sessionString -> {
             IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
             
-            return resourceItemService.findByUUID(session.getResourceItemID())
+            return resourceItemService.findByUUID(session, session.getResourceItemID())
                     .chain(resourceItem -> {
                         if (resourceItem != null) {
                             return ReactiveTransactionUtil.withTransaction(tx -> {
-                                return resourceItem.getDataRow()
+                                return resourceItem.getDataRow(session)
                                         .map(dataRow -> {
                                             if (dataRow != null) {
-                                                resourceItem.updateData(sessionString.getBytes(), system, identityToken);
+                                                resourceItem.updateData(session, sessionString.getBytes(), system, identityToken);
                                                 return session;
                                             } else {
                                                 throw new ResourceItemException("Cannot update a session that has no active data row attached");

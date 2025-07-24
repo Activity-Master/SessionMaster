@@ -9,6 +9,7 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.syste
 import com.guicedee.activitymaster.fsdm.client.services.systems.IActivityMasterSystem;
 import io.smallrye.mutiny.Uni;
 import lombok.extern.java.Log;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import java.util.logging.Level;
 
@@ -39,12 +40,13 @@ public class SessionMasterSystem
 	 * Registers the SessionMaster system with the enterprise.
 	 * This method maintains backward compatibility by calling the reactive version
 	 * and blocking until the result is available.
-	 * 
+	 *
+	 * @param session
 	 * @param enterprise The enterprise to register the system with
 	 * @return The registered system
 	 */
 	@Override
-	public ISystems<?,?> registerSystem(IEnterprise<?,?> enterprise)
+	public ISystems<?,?> registerSystem(Mutiny.Session session, IEnterprise<?,?> enterprise)
 	{
 		try {
 			return registerSystemReactive(enterprise)
@@ -67,14 +69,14 @@ public class SessionMasterSystem
 	{
 		// First create the system
 		Uni<ISystems<?,?>> createUni = systemsService.get()
-				.create(enterprise, getSystemName(), getSystemDescription());
+				.create(session, enterprise, getSystemName(), getSystemDescription());
 		
 		// Return the created system, but also register it
 		return createUni
 				.onItem().invoke(iSystems -> {
 					// Register the system in a fire-and-forget manner
 					systemsService.get()
-							.registerNewSystem(enterprise, getSystem(enterprise))
+							.registerNewSystem(session, enterprise, getSystem(session, enterprise))
 							.subscribe().with(
 									result -> log.info("System registered successfully: " + result),
 									error -> log.log(Level.SEVERE, "Error registering system: " + error.getMessage(), error)
@@ -89,11 +91,12 @@ public class SessionMasterSystem
 	 * Creates default settings for the system.
 	 * This method maintains backward compatibility by calling the reactive version
 	 * and blocking until the result is available.
-	 * 
+	 *
+	 * @param session
 	 * @param enterprise The enterprise to create defaults for
 	 */
 	@Override
-	public void createDefaults(IEnterprise<?,?> enterprise)
+	public void createDefaults(Mutiny.Session session, IEnterprise<?,?> enterprise)
 	{
 		try {
 			createDefaultsReactive(enterprise)

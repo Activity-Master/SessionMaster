@@ -8,10 +8,8 @@ import com.guicedee.activitymaster.fsdm.client.services.*;
 import com.guicedee.activitymaster.fsdm.client.services.ReactiveTransactionUtil;
 import com.guicedee.activitymaster.fsdm.client.services.annotations.*;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.IWarehouseTable;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.classifications.IClassification;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedPartyType;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.fsdm.client.services.exceptions.InvolvedPartyException;
 import com.guicedee.activitymaster.fsdm.client.services.exceptions.SecurityAccessException;
@@ -24,14 +22,12 @@ import com.guicedee.activitymaster.sessions.services.dto.*;
 import com.guicedee.guicedinjection.pairing.Pair;
 import com.guicedee.services.jsonrepresentation.IJsonRepresentation;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.tuples.Tuple2;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -198,7 +194,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
  */
 Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 	{
-		return passwordsService.findByUsernameAndPassword(loginDTO.getUserName(),
+		return passwordsService.findByUsernameAndPassword(session, loginDTO.getUserName(),
 				loginDTO.getPassword(),
 				system.get(),
 				true,
@@ -281,14 +277,14 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 						
 						// Find involved party identification type
 						return deviceIP.findInvolvedPartyIdentificationType(
-								NoClassification.toString(), 
+										session, NoClassification.toString(),
 								IdentificationTypeWebClientUUID.toString(), 
 								webClientID,
 								system, true, true, finalIdentityToken)
 							.chain(involvedPartyIdentificationType -> {
 								// Archive if present
 								if (involvedPartyIdentificationType != null) {
-									return involvedPartyIdentificationType.archive(system, finalIdentityToken)
+									return involvedPartyIdentificationType.archive(session, system, finalIdentityToken)
 										.chain(() -> Uni.createFrom().item(involvedPartyIdentificationType));
 								} else {
 									return Uni.createFrom().nullItem();
@@ -297,7 +293,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 							.chain(involvedPartyIdentificationType -> 
 								// Add child
 								deviceIP.addChild(
-										(IWarehouseTable<?, ?, ? extends Serializable, ?>) foundParty, 
+										session, (IWarehouseTable<?, ?, ? extends Serializable, ?>) foundParty,
 										DeviceUsedBy.toString(), 
 										webClientID, 
 										system, 
@@ -306,7 +302,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 							.chain(() -> 
 								// Add or update involved party identification type
 								foundParty.addOrUpdateInvolvedPartyIdentificationType(
-										NoClassification.toString(), 
+										session, NoClassification.toString(),
 										IdentificationTypeWebClientUUID.toString(),
 										webClientID, 
 										webClientID,
@@ -351,7 +347,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 		
 		var idWebClient
 				= profileServiceDTO.findInvolvedParty()
-				                   .findInvolvedPartyIdentificationType(NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
+				                   .findInvolvedPartyIdentificationType(session, NoClassification.toString(), IdentificationTypeWebClientUUID.toString(),
 						                   profileServiceDTO.getWebClientUUID()
 						                                    .toString(), system, false, false,
 						                   this.identityToken);
@@ -511,7 +507,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 				.get()
 				.onItem().ifNotNull().transformToUni(ipExists -> {
 					// Check if user has confirmation key
-					return ipExists.hasClassifications(ConfirmationKey, null, system, finalIdentityToken)
+					return ipExists.hasClassifications(session, ConfirmationKey, null, system, finalIdentityToken)
 						.chain(hasConfirmationKey -> {
 							if (hasConfirmationKey) {
 								return Uni.createFrom().failure(
@@ -529,7 +525,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 					
 					// Add identification type
 					return newIp.addOrUpdateInvolvedPartyIdentificationType(
-							NoClassification.toString(),
+									session, NoClassification.toString(),
 							IdentificationTypeUserName,
 							userRegistrationDTO.getUserName(),
 							userRegistrationDTO.getUserName(),
@@ -537,11 +533,11 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 							this.identityToken)
 						.chain(idType -> {
 							// Expire identification type
-							return idType.expire(Duration.of(2, HOURS), finalIdentityToken)
+							return idType.expire(session, Duration.of(2, HOURS), finalIdentityToken)
 								.chain(() -> {
 									// Add username and password
 									return passwordsService.addUpdateUsernamePassword(
-										userRegistrationDTO.getUserName(), 
+											session, userRegistrationDTO.getUserName(),
 										userRegistrationDTO.getPassword(), 
 										newIp, 
 										system,
@@ -554,7 +550,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 							
 							// Add username identification type
 							return newIp.addOrUpdateInvolvedPartyIdentificationType(
-								NoClassification.toString(),
+									session, NoClassification.toString(),
 								IdentificationTypeUserName,
 								userRegistrationDTO.getUserName(),
 								userRegistrationDTO.getUserName(),
@@ -563,24 +559,24 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 						})
 						.chain(idUserNameType -> {
 							// Expire username identification type
-							return idUserNameType.expire(Duration.of(2, HOURS), finalIdentityToken);
+							return idUserNameType.expire(session, Duration.of(2, HOURS), finalIdentityToken);
 						})
 						.chain(() -> {
 							// Find security password classifications
-							return newIp.findClassification(SecurityPassword, system, finalIdentityToken)
+							return newIp.findClassification(session, SecurityPassword, system, finalIdentityToken)
 								.chain(classification -> {
 									if (classification != null) {
-										return classification.expire(Duration.of(2, HOURS), this.identityToken);
+										return classification.expire(session, Duration.of(2, HOURS), this.identityToken);
 									} else {
 										return Uni.createFrom().voidItem();
 									}
 								});
 						})
 						.chain(() -> {
-							return newIp.findClassification(SecurityPasswordSalt, system, finalIdentityToken)
+							return newIp.findClassification(session, SecurityPasswordSalt, system, finalIdentityToken)
 								.chain(classification -> {
 									if (classification != null) {
-										return classification.expire(Duration.of(2, HOURS), this.identityToken);
+										return classification.expire(session, Duration.of(2, HOURS), this.identityToken);
 									} else {
 										return Uni.createFrom().voidItem();
 									}
@@ -595,17 +591,17 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 							
 							// Add confirmation key classification
 							return newIp.addOrUpdateClassification(
-									ConfirmationKey, 
+											session, ConfirmationKey,
 									null, 
 									confirmationKeyDTO.getConfirmationKey() + "", 
 									system, 
 									this.identityToken)
 								.chain(() -> {
 									// Find and expire confirmation key
-									return newIp.findClassification(ConfirmationKey, system, finalIdentityToken)
+									return newIp.findClassification(session, ConfirmationKey, system, finalIdentityToken)
 										.chain(classification -> {
 											if (classification != null) {
-												return classification.expire(Duration.of(2, HOURS), this.identityToken)
+												return classification.expire(session, Duration.of(2, HOURS), this.identityToken)
 													.map(v -> confirmationKeyDTO);
 											} else {
 												return Uni.createFrom().item(confirmationKeyDTO);
@@ -633,7 +629,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 		// Use ReactiveTransactionUtil for transaction management
 		return ReactiveTransactionUtil.withTransaction(session -> {
 			// Find device type
-			return involvedPartyService.findType(TypeDevice.toString(), system.get(), identityToken)
+			return involvedPartyService.findType(session, TypeDevice.toString(), system.get(), identityToken)
 				.chain(deviceType -> {
 					// Try to find existing device IP
 					return involvedPartyService.get().builder()
@@ -650,11 +646,11 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 									.setValue(webClientUUID);
 							
 							// Create involved party
-							return involvedPartyService.create(system.get(), deviceIDType, false, identityToken)
+							return involvedPartyService.create(session, system.get(), deviceIDType, false, identityToken)
 								.chain(newIp -> {
 									// Add involved party type
 									return newIp.addOrReuseInvolvedPartyType(
-											NoClassification.toString(), 
+													session, NoClassification.toString(),
 											deviceType, 
 											webClientUUID, 
 											system.get(), 
@@ -684,7 +680,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 		// Use ReactiveTransactionUtil for transaction management
 		return ReactiveTransactionUtil.withTransaction(session -> {
 			// Use addOrUpdateClassification which already returns a reactive type
-			return newIp.addOrUpdateClassification(LastVisitTime,
+			return newIp.addOrUpdateClassification(session, LastVisitTime,
 					null,
 					lastVisit,
 					system.get(),
@@ -705,7 +701,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 		{
 			return Uni.createFrom().failure(new ProfileServiceException("Username cannot be empty"));
 		}
-		return passwordsService.doesUsernameExist(userLoginDTO.getUserName(), system, identityToken)
+		return passwordsService.doesUsernameExist(session, userLoginDTO.getUserName(), system, identityToken)
 			.onFailure().invoke(error -> log.log(Level.SEVERE, "Error verifying username: {0}", error.getMessage()));
 	}
 	
@@ -728,7 +724,7 @@ Uni<IInvolvedParty<?, ?>> authenticate(UserLoginDTO<?> loginDTO)
 		return ReactiveTransactionUtil.withTransaction(session -> {
 			// Find involved party by username and password
 			return passwordsService.findByUsernameAndPassword(
-					userLoginDTO.getUserName(), 
+							session, userLoginDTO.getUserName(),
 					userLoginDTO.getPassword(),
 					system.get(), 
 					true, 

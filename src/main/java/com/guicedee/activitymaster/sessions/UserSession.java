@@ -5,13 +5,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
-import com.guicedee.activitymaster.fsdm.client.services.ISystemsService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import io.smallrye.mutiny.Uni;
 
-import com.guicedee.client.IGuiceContext;
 import lombok.extern.java.Log;
 
 import java.io.Serial;
@@ -162,7 +159,7 @@ public class UserSession
 				UUID id = UUID.fromString(as("involved-party", String.class));
 				
 				// Get the involved party reactively
-				return service.findByID(id)
+				return service.findByID(session, id)
 					.onItem().invoke(party -> this.involvedParty = party)
 					.onFailure().invoke(error -> log.log(Level.SEVERE, "Error getting involved party: " + error.getMessage(), error));
 			} catch (Exception e) {
