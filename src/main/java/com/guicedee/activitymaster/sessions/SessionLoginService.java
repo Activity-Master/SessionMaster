@@ -91,10 +91,7 @@ import static java.time.temporal.ChronoUnit.*;
 public class SessionLoginService implements ISessionLoginService<SessionLoginService>
 {
 	private static final Logger log = Logger.getLogger(SessionLoginService.class.getName());
-	
-	@Inject
-	private IEnterprise<?, ?> enterprise;
-	
+
 	@Inject
 	private IUserSessionService<?> sessionMasterService;
 	

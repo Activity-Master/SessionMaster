@@ -41,9 +41,6 @@ public class UserSessionProvider
 		implements Provider<IUserSession<UserSession>>
 {
 	@Inject
-	private IEnterprise<?, ?> enterprise;
-	
-	@Inject
 	private IUserSessionService<?> sessionMasterService;
 	
 	@Inject
