@@ -8,6 +8,7 @@ module com.guicedee.activitymaster.sessions {
 	exports com.guicedee.activitymaster.sessions.services.classifications;
 	exports com.guicedee.activitymaster.sessions.services.dto;
 	
+	requires transitive com.guicedee.guicedinjection;
 	requires org.json;
 	requires com.guicedee.guicedpersistence;
 	
@@ -22,20 +23,20 @@ module com.guicedee.activitymaster.sessions {
 	requires java.sql;
 	requires static lombok;
 	
-	requires com.guicedee.jsonrepresentation;
+	requires transitive com.guicedee.jsonrepresentation;
 
 	requires com.guicedee.activitymaster.fsdm;
 	requires com.google.guice;
 	
-	requires com.guicedee.guicedinjection;
 	requires com.google.common;
 
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.core;
 	//requires net.sf.uadetector.core;
-	requires com.guicedee.activitymaster.fsdm.client;
+	requires transitive com.guicedee.activitymaster.fsdm.client;
 	requires com.entityassist;
+	requires org.hibernate.reactive;
 	
 	provides IActivityMasterSystem with SessionMasterSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with SessionMasterBinder;
