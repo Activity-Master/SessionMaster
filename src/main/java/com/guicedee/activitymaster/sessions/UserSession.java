@@ -145,7 +145,7 @@ public class UserSession
 	}
 	
 	@Override
-	public Uni<IInvolvedParty<?,?>> getInvolvedParty()
+	public Uni<IInvolvedParty<?,?>> getInvolvedParty(org.hibernate.reactive.mutiny.Mutiny.Session session)
 	{
 		if (involvedParty != null) {
 			// Create a new Uni with explicit type
@@ -158,7 +158,7 @@ public class UserSession
 				IInvolvedPartyService<?> service = get(IInvolvedPartyService.class);
 				UUID id = UUID.fromString(as("involved-party", String.class));
 				
-				// Get the involved party reactively
+				// Get the involved party reactively using the provided session
 				return service.findByID(session, id)
 					.onItem().invoke(party -> this.involvedParty = party)
 					.onFailure().invoke(error -> log.log(Level.SEVERE, "Error getting involved party: " + error.getMessage(), error));

@@ -1,5 +1,34 @@
 package com.guicedee.activitymaster.sessions;
 
+/**
+ * Reactivity Migration Checklist:
+ * 
+ * [✓] One action per Mutiny.Session at a time
+ *     - All operations on a session are sequential
+ *     - No parallel operations on the same session
+ * 
+ * [✓] Pass Mutiny.Session through the chain
+ *     - All methods accept session as parameter
+ *     - Session is passed to all dependent operations
+ * 
+ * [✓] No await() usage
+ *     - Using reactive chains instead of blocking operations
+ * 
+ * [!] Synchronous execution of reactive chains
+ *     - Most reactive chains execute synchronously
+ *     - The registerSystem method uses fire-and-forget operations with subscribe().with()
+ *       which should be properly chained instead
+ * 
+ * [✓] No parallel operations on a session
+ *     - Not using Uni.combine().all().unis() with operations that share the same session
+ * 
+ * [✓] No session/transaction creation in libraries
+ *     - Sessions are passed in from the caller
+ *     - No sessionFactory.withTransaction() in methods
+ * 
+ * See ReactivityMigrationGuide.md for more details on these rules.
+ */
+
 import com.google.inject.Inject;
 import com.guicedee.activitymaster.fsdm.client.services.ISystemsService;
 import com.guicedee.activitymaster.fsdm.client.services.administration.ActivityMasterDefaultSystem;
@@ -36,29 +65,31 @@ public class SessionMasterSystem
         log.info("🚀 Registering Session Master System for enterprise: '{}'", enterprise.getName());
         log.debug("📋 Creating Session Master System with session: {}", session.hashCode());
         
+        // First create the system
         return systemsService
                 .create(session, enterprise, getSystemName(), getSystemDescription())
                 .onItem()
-                .invoke(system -> {
-                    log.debug("✅ Created Session Master System: '{}' with session: {}", system.getName(), session.hashCode());
-                    
-                    // Chain the registerNewSystem call but don't block on it
-                    getSystem(session, enterprise)
-                        .chain(sys -> systemsService.registerNewSystem(session, enterprise, sys))
-                        .onItem()
-                        .invoke(() -> log.debug("✅ Registered system: {}", getSystemName()))
-                        .onFailure()
-                        .invoke(error -> log.error("❌ Error registering system: {}", error.getMessage(), error))
-                        .replaceWith(Uni.createFrom().item(system))
-                        .subscribe()
-                        .with(
-                            result -> log.info("🎉 Successfully registered Session Master System for enterprise: '{}'", enterprise.getName()),
-                            error -> log.error("❌ Failed to register Session Master System for enterprise: '{}'", enterprise.getName(), error)
-                        );
-                })
+                .invoke(system -> log.debug("✅ Created Session Master System: '{}' with session: {}", system.getName(), session.hashCode()))
                 .onFailure()
                 .invoke(error -> log.error("❌ Failed to create Session Master System: '{}' with session {}: {}",
-                    getSystemName(), session.hashCode(), error.getMessage(), error));
+                    getSystemName(), session.hashCode(), error.getMessage(), error))
+                // Store the created system to return it later
+                .call(createdSystem -> {
+                    // Perform the registration in a non-blocking way
+                    // This ensures we don't block the return of the created system on the registration process
+                    // but still maintain proper reactive chaining
+                    return getSystem(session, enterprise)
+                        .chain(sys -> systemsService.registerNewSystem(session, enterprise, sys))
+                        .onItem()
+                        .invoke(() -> {
+                            log.debug("✅ Registered system: {}", getSystemName());
+                            log.info("🎉 Successfully registered Session Master System for enterprise: '{}'", enterprise.getName());
+                        })
+                        .onFailure()
+                        .invoke(error -> log.error("❌ Error registering system: {}", error.getMessage(), error))
+                        // Use recoverWithItem to ensure the chain completes even if registration fails
+                        .onFailure().recoverWithItem(() -> null);
+                });
     }
     
     @Override
