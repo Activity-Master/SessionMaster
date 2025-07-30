@@ -40,7 +40,6 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.sessions.services.*;
-import io.smallrye.mutiny.Uni;
 import jakarta.persistence.NoResultException;
 import lombok.extern.java.Log;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -124,12 +123,15 @@ public class UserSessionProvider
     }
     else
     {
-      try
-      {
+      //try
+    //  {
         // Using the reactive find method instead of the blocking builder().find() approach
         // This is still using .await().indefinitely() for backward compatibility,
         // but it's a step towards making this code fully reactive in the future.
         // Use sessionFactory to create a session for the find operation
+        //todo this logic is in the userSessionService as getSession()
+        return null;
+        /*
         IInvolvedParty<?, ?> byUUID = sessionFactory.withSession(session ->
                                                                      session.withTransaction(tx -> {
                                                                        return involvedPartyService.find(session, localStorageKey)
@@ -138,10 +140,10 @@ public class UserSessionProvider
                                                                                     ISessionLoginService<?> sessionLoginService = com.guicedee.client.IGuiceContext.get(ISessionLoginService.class);
                                                                                     ProfileServiceDTO<?> dto = com.guicedee.client.IGuiceContext.get(ProfileServiceDTO.class);
                                                                                     // Get system and token using the enterprise parameter and await the results
-                                                                                    ISystems<?, ?> system = getISystem(SessionMasterSystemName, enterprise).await()
+                                                                                    ISystems<?, ?> system = getISystem(session, SessionMasterSystemName, enterprise).await()
                                                                                                                 .indefinitely()
                                                                                         ;
-                                                                                    UUID systemToken = getISystemToken(SessionMasterSystemName, enterprise).await()
+                                                                                    UUID systemToken = getISystemToken(session, SessionMasterSystemName, enterprise).await()
                                                                                                            .indefinitely()
                                                                                         ;
 
@@ -165,10 +167,10 @@ public class UserSessionProvider
         // In a future migration step, this should be updated to use reactive patterns.
         //noinspection unchecked
         // Get system and token using the enterprise parameter and await the results
-        ISystems<?, ?> system = getISystem(SessionMasterSystemName, enterprise).await()
+        ISystems<?, ?> system = getISystem(session, SessionMasterSystemName, enterprise).await()
                                     .indefinitely()
             ;
-        UUID systemToken = getISystemToken(SessionMasterSystemName, enterprise).await()
+        UUID systemToken = getISystemToken(session, SessionMasterSystemName, enterprise).await()
                                .indefinitely()
             ;
 
@@ -189,7 +191,7 @@ public class UserSessionProvider
       {
         log.log(Level.SEVERE, "Cannot work on session", T);
         return new UserSession();
-      }
+      }*/
     }
   }
 }

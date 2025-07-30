@@ -43,8 +43,8 @@ public class SessionMasterBinder
 		expose(genericKeySessionLoginService);
 		expose(ISessionLoginService.class);
 		
-		bind(UserSecurityDTO.class).toProvider(UserSecurityProvider.class);
-		expose(UserSecurityDTO.class);
+		/*bind(UserSecurityDTO.class).toProvider(UserSecurityProvider.class);
+		expose(UserSecurityDTO.class);*/
 	}
 
 }

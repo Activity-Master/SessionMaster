@@ -80,13 +80,16 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@Inject
 	private IPasswordsService<?> passwordsService;
 	
-	@Inject
-	@Named(SessionMasterSystemName)
-	private Provider<ISystems<?, ?>> system;
-	
-	@Inject
-	@Named(SessionMasterSystemName)
-	private UUID identityToken;
+ // TODO: Remove these injected fields after full migration to reactive pattern
+ // These fields are being replaced by calls to getISystem and getISystemToken
+ // They are kept temporarily as fallbacks during the migration
+ @Inject
+ @Named(SessionMasterSystemName)
+ private Provider<ISystems<?, ?>> system;
+
+ @Inject
+ @Named(SessionMasterSystemName)
+ private UUID identityToken;
 	
 	@Override
 	public Uni<ProfileServiceDTO<?>> loginVisitor(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken)
@@ -418,7 +421,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 							.map(updatedSession -> {
 								updatedSession.addValue(IDENTITY_SESSION_NAME, dto);
 								updatedSession.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-								updatedSession.addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(newIp, system, finalIdentityToken));
+								updatedSession.addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(session, newIp, system, finalIdentityToken));
 								return updatedSession;
 							});
 				})
