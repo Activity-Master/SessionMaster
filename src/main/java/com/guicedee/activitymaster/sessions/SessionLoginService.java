@@ -79,30 +79,12 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	
 	@Inject
 	private IPasswordsService<?> passwordsService;
-	
- // TODO: Remove these injected fields after full migration to reactive pattern
- // These fields are being replaced by calls to getISystem and getISystemToken
- // They are kept temporarily as fallbacks during the migration
- @Inject
- @Named(SessionMasterSystemName)
- private Provider<ISystems<?, ?>> system;
 
- @Inject
- @Named(SessionMasterSystemName)
- private UUID identityToken;
-	
 	@Override
 	public Uni<ProfileServiceDTO<?>> loginVisitor(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		log.log(Level.FINE, "Login visitor with web client UUID: {0}", profileServiceDTO.getWebClientUUID());
-		
-		// Handle identity token
-		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
-		{
-			identityToken = new UUID[]{this.identityToken};
-		}
-		final UUID[] finalIdentityToken = identityToken;
-		
+
 		// Create a final reference to the DTO for use in lambda expressions
 		final ProfileServiceDTO<?> dto = profileServiceDTO;
 		
@@ -111,13 +93,13 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		// Find device IP using the builder with session parameter
 		Uni<IInvolvedParty<?, ?>> deviceIPUni = (Uni) iInvolvedParty.builder(session)
-			.findByType(TypeDevice.toString(), dto.getWebClientUUID().toString(), system, finalIdentityToken)
+			.findByType(TypeDevice.toString(), dto.getWebClientUUID().toString(), system, identityToken)
 			.get();
 		
 		// Handle NoResultException by creating a new device IP
 		deviceIPUni = deviceIPUni.onFailure(NoResultException.class).recoverWithUni(() -> {
 			log.log(Level.FINE, "Device IP not found, creating new one");
-			return createDeviceIP(session, dto);
+			return createDeviceIP(session, dto,system,identityToken);
 		});
 		
 		// Handle any other failures
@@ -146,11 +128,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			}
 			
 			// Update last visit time
-			return updateLatestVisit(session, foundIPCurrentOnDevice, finalIdentityToken);
+			return updateLatestVisit(session, foundIPCurrentOnDevice, system,identityToken);
 		})
 		.chain(updatedIP -> {
 			// Get session
-			return sessionMasterService.getSession(session, updatedIP, system, finalIdentityToken);
+			return sessionMasterService.getSession(session, updatedIP, system, identityToken);
 		})
 		.map(userSession -> {
 			// Return the DTO
@@ -165,20 +147,20 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		
 		return result;
 	}
-	
+
 	/**
 	 * Authenticates a user with the given login DTO.
 	 * This method has been migrated to use reactive patterns.
 	 *
-	 * @param session The Mutiny.Session to use for database operations
+	 * @param session  The Mutiny.Session to use for database operations
 	 * @param loginDTO The login DTO containing username and password
 	 * @return A Uni emitting the authenticated involved party
 	 */
-	Uni<IInvolvedParty<?, ?>> authenticate(Mutiny.Session session, UserLoginDTO<?> loginDTO)
+	Uni<IInvolvedParty<?, ?>> authenticate(Mutiny.Session session, UserLoginDTO<?> loginDTO, ISystems<?, ?> system, UUID... identityToken)
 	{
 		return passwordsService.findByUsernameAndPassword(session, loginDTO.getUserName(),
 				loginDTO.getPassword(),
-				system.get(),
+				system,
 				true,
 				identityToken);
 	}
@@ -201,13 +183,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			profileServiceDTO.setWebClientUUID(UUID.randomUUID());
 		}
 		
-		final UUID[] finalIdentityToken = (identityToken == null || identityToken.length == 0) 
-			? new UUID[]{this.identityToken} 
-			: identityToken;
-		
 		// Try to find existing device IP
 		return (Uni) involvedPartyService.get().builder(session)
-			.findByTypeAll(TypeDevice.toString(), profileServiceDTO.getWebClientUUID().toString(), system, finalIdentityToken)
+			.findByTypeAll(TypeDevice.toString(), profileServiceDTO.getWebClientUUID().toString(), system, identityToken)
 			.latestFirst()
 			.setMaxResults(1)
 			.get()
@@ -215,10 +193,10 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			.onItem().ifNull().switchTo(() -> {
 				// Create new device IP if not found
 				log.log(Level.FINE, "Device IP not found, creating new one via loginVisitor");
-				return (Uni) loginVisitor(session, profileServiceDTO, system, finalIdentityToken)
+				return (Uni) loginVisitor(session, profileServiceDTO, system, identityToken)
 					.chain(dto -> 
 						involvedPartyService.get().builder(session)
-							.findByTypeAll(TypeDevice.toString(), profileServiceDTO.getWebClientUUID().toString(), system, finalIdentityToken)
+							.findByTypeAll(TypeDevice.toString(), profileServiceDTO.getWebClientUUID().toString(), system, identityToken)
 							.latestFirst()
 							.setMaxResults(1)
 							.get()
@@ -232,20 +210,16 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	public Uni<ProfileServiceDTO<?>> loginUser(Mutiny.Session session, UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		log.log(Level.FINE, "Login user: {0}, already verified: {1}", new Object[]{profileServiceDTO.getUserName(), alreadyVerified});
-		
-		final UUID[] finalIdentityToken = (identityToken == null || identityToken.length == 0 && profileServiceDTO.getIdentityToken() == null)
-			? new UUID[]{this.identityToken}
-			: identityToken;
-		
+
 		// Use SessionUtil to execute with the provided session
 		return (Uni) SessionUtil.executeWithSession(session, dbSession ->
 			// Find or create device IP
-			findOrCreateDeviceIP(dbSession, profileServiceDTO, system, finalIdentityToken)
+			findOrCreateDeviceIP(dbSession, profileServiceDTO, system, identityToken)
 				.chain(deviceIP -> {
 					// Authenticate user or get involved party
 					Uni<IInvolvedParty<?, ?>> foundPartyUni;
 					if (!alreadyVerified) {
-						foundPartyUni = authenticate(dbSession, profileServiceDTO)
+						foundPartyUni = authenticate(dbSession, profileServiceDTO,system,identityToken)
 							.map(foundParty -> {
 								profileServiceDTO.setPassword(null);
 								return foundParty;
@@ -263,11 +237,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 										dbSession, NoClassification.toString(),
 								IdentificationTypeWebClientUUID.toString(), 
 								webClientID,
-								system, true, true, finalIdentityToken)
+								system, true, true, identityToken)
 							.chain(involvedPartyIdentificationType -> {
 								// Archive if present
 								if (involvedPartyIdentificationType != null) {
-									return involvedPartyIdentificationType.archive(dbSession, system, finalIdentityToken)
+									return involvedPartyIdentificationType.archive(dbSession, system, identityToken)
 										.chain(() -> Uni.createFrom().item(involvedPartyIdentificationType));
 								} else {
 									return Uni.createFrom().nullItem();
@@ -280,7 +254,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 										DeviceUsedBy.toString(), 
 										webClientID, 
 										system, 
-										finalIdentityToken)
+										identityToken)
 							)
 							.chain(() -> 
 								// Add or update involved party identification type
@@ -290,7 +264,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 										webClientID, 
 										webClientID,
 										system, 
-										finalIdentityToken)
+										identityToken)
 							)
 							.chain(() -> 
 								// Set user logged in
@@ -300,7 +274,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 										profileServiceDTO, 
 										profileServiceDTO.isRememberMe(), 
 										system, 
-										this.identityToken)
+										identityToken)
 									.map(v -> profileServiceDTO)
 							);
 					});
@@ -321,16 +295,10 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	@Override
 	public Uni<ProfileServiceDTO<?>> logoutUser(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
-		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
-		{
-			identityToken = new UUID[]{this.identityToken};
-		}
-		final UUID[] finalIdentityToken = identityToken;
-		
 		// Use SessionUtil to execute with the provided session
 		return SessionUtil.executeWithSession(session, dbSession -> {
 			// Create device IP
-			return createDeviceIP(dbSession, profileServiceDTO)
+			return createDeviceIP(dbSession, profileServiceDTO,system,identityToken)
 				.chain(deviceIP -> {
 					// Find involved party identification type
 					return profileServiceDTO.findInvolvedParty()
@@ -342,18 +310,18 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 							system, 
 							false, 
 							false,
-							this.identityToken)
+							identityToken)
 						.chain(idWebClientOpt -> {
 							// Archive if present
 							if (idWebClientOpt != null) {
-								return idWebClientOpt.archive(dbSession, system, finalIdentityToken)
+								return idWebClientOpt.archive(dbSession, system, identityToken)
 									.chain(() -> deviceIP.archiveChild(
 										dbSession,
 										(IWarehouseTable)idWebClientOpt.getPrimary(), 
 										DeviceUsedBy.toString(), 
 										null, 
 										system, 
-										finalIdentityToken)
+										identityToken)
 									)
 									.map(v -> (IInvolvedParty<?,?>) deviceIP);
 							} else {
@@ -371,7 +339,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 						uuid,
 						uuid,
 						system, 
-						finalIdentityToken)
+						identityToken)
 						.chain(idType -> 
 							// Set user logged out
 							setUserLoggedOut(
@@ -380,7 +348,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 									((IInvolvedParty<?,?>)deviceIP),
 								profileServiceDTO, 
 								system, 
-								finalIdentityToken)
+								identityToken)
 							.map(v -> profileServiceDTO)
 						);
 				});
@@ -395,11 +363,6 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	                            boolean rememberMe,
 	                            @Party("SystemPerformed") ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
-		// Normalize identity token
-		final UUID[] finalIdentityToken = (identityToken == null || identityToken.length == 0 && profileServiceDTO.getIdentityToken() == null)
-				? new UUID[]{this.identityToken}
-				: identityToken;
-		
 		// Update profile service DTO
 		profileServiceDTO.setInvolvedParty(newIp);
 		profileServiceDTO.setIdentityToken(newIp.getId());
@@ -414,20 +377,20 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 						: com.entityassist.RootEntity.getNow().plusMinutes(20));
 		
 		// Get session and update it reactively
-		return sessionMasterService.getSession(session, newIp, system, finalIdentityToken)
+		return sessionMasterService.getSession(session, newIp, system, identityToken)
 				.chain(userSession -> {
 					// Set session values
 					return userSession.setInvolvedParty(newIp)
 							.map(updatedSession -> {
 								updatedSession.addValue(IDENTITY_SESSION_NAME, dto);
 								updatedSession.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
-								updatedSession.addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(session, newIp, system, finalIdentityToken));
+								updatedSession.addValue(USER_ROLES_SESSION_NAME, rolesService.getRoles(session, newIp, system, identityToken));
 								return updatedSession;
 							});
 				})
 				.chain(userSession -> {
 					// Update session and remove cache
-					return sessionMasterService.updateSession(session, newIp, userSession, system, finalIdentityToken)
+					return sessionMasterService.updateSession(session, newIp, userSession, system, identityToken)
 							.chain(updatedSession -> sessionMasterService.removeCache(session, newIp));
 				})
 				.onFailure().invoke(error -> {
@@ -460,11 +423,6 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	                             @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
 	                             @Party("SystemPerformed") ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
-		// Normalize identity token
-		final UUID[] finalIdentityToken = (identityToken == null || identityToken.length == 0)
-				? new UUID[]{this.identityToken}
-				: identityToken;
-		
 		// Create user security DTO
 		UserSecurityDTO us = com.guicedee.client.IGuiceContext.get(UserSecurityDTO.class);
 		us.setRememberMe(false);
@@ -472,14 +430,14 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		us.setLoginExpiresOn(com.entityassist.RootEntity.getNow());
 		
 		// Get session and update it reactively
-		return sessionMasterService.getSession(session, involvedParty, system, finalIdentityToken)
+		return sessionMasterService.getSession(session, involvedParty, system, identityToken)
 				.chain(userSession -> {
 					// Update session values
 					userSession.addValue(UserSecurityDTO.USER_SECURITY_SESSION_NAME, us);
 					userSession.removeValue(USER_ROLES_SESSION_NAME);
 					
 					// Update session for involved party
-					return sessionMasterService.updateSession(session, involvedParty, userSession, system, finalIdentityToken);
+					return sessionMasterService.updateSession(session, involvedParty, userSession, system, identityToken);
 				})
 				.chain(userSession -> {
 					// Set profile service dto to the device IP
@@ -489,7 +447,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 					// Update session for device IP
 					return userSession.setInvolvedParty(deviceIP)
 							.chain(updatedSession -> 
-								sessionMasterService.updateSession(session, deviceIP, updatedSession, system, finalIdentityToken)
+								sessionMasterService.updateSession(session, deviceIP, updatedSession, system, identityToken)
 							);
 				})
 				.onFailure().invoke(error -> {
@@ -502,12 +460,6 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	public Uni<UserConfirmationKeyDTO<?>> registerVisitor(Mutiny.Session session, UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, java.util.UUID... identityToken)
 	{
 		log.log(Level.FINE, "Registering visitor: {0}", userRegistrationDTO.getUserName());
-		
-		// Handle identity token
-		final UUID[] finalIdentityToken = (identityToken == null || identityToken.length == 0)
-			? new UUID[]{this.identityToken}
-			: identityToken;
-		
 		// Use SessionUtil to execute with the provided session
 		return (Uni) SessionUtil.executeWithSession(session, dbSession -> {
 			// Check if user already exists
@@ -516,11 +468,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 						IdentificationTypeUserName.toString(), 
 						userRegistrationDTO.getUserName(), 
 						system, 
-						finalIdentityToken)
+						identityToken)
 				.get()
 				.onItem().ifNotNull().transformToUni(ipExists -> {
 					// Check if user has confirmation key
-					return ipExists.hasClassifications(dbSession, ConfirmationKey, null, system, finalIdentityToken)
+					return ipExists.hasClassifications(dbSession, ConfirmationKey, null, system, identityToken)
 						.chain(hasConfirmationKey -> {
 							if (hasConfirmationKey) {
 								return Uni.createFrom().failure(
@@ -543,10 +495,10 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 							userRegistrationDTO.getUserName(),
 							userRegistrationDTO.getUserName(),
 							system,
-							this.identityToken)
+							identityToken)
 						.chain(idType -> {
 							// Expire identification type
-							return idType.expire(dbSession, Duration.of(2, HOURS), finalIdentityToken)
+							return idType.expire(dbSession, Duration.of(2, HOURS), identityToken)
 								.chain(() -> {
 									// Add username and password
 									return passwordsService.addUpdateUsernamePassword(
@@ -554,7 +506,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 										userRegistrationDTO.getPassword(), 
 										newIp, 
 										system,
-										this.identityToken);
+										identityToken);
 								});
 						})
 						.chain(updatedIp -> {
@@ -568,28 +520,28 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 								userRegistrationDTO.getUserName(),
 								userRegistrationDTO.getUserName(),
 								system,
-								this.identityToken);
+								identityToken);
 						})
 						.chain(idUserNameType -> {
 							// Expire username identification type
-							return idUserNameType.expire(dbSession, Duration.of(2, HOURS), finalIdentityToken);
+							return idUserNameType.expire(dbSession, Duration.of(2, HOURS), identityToken);
 						})
 						.chain(() -> {
 							// Find security password classifications
-							return newIp.findClassification(dbSession, SecurityPassword, system, finalIdentityToken)
+							return newIp.findClassification(dbSession, SecurityPassword, system, identityToken)
 								.chain(classification -> {
 									if (classification != null) {
-										return classification.expire(dbSession, Duration.of(2, HOURS), this.identityToken);
+										return classification.expire(dbSession, Duration.of(2, HOURS), identityToken);
 									} else {
 										return Uni.createFrom().voidItem();
 									}
 								});
 						})
 						.chain(() -> {
-							return newIp.findClassification(dbSession, SecurityPasswordSalt, system, finalIdentityToken)
+							return newIp.findClassification(dbSession, SecurityPasswordSalt, system, identityToken)
 								.chain(classification -> {
 									if (classification != null) {
-										return classification.expire(dbSession, Duration.of(2, HOURS), this.identityToken);
+										return classification.expire(dbSession, Duration.of(2, HOURS), identityToken);
 									} else {
 										return Uni.createFrom().voidItem();
 									}
@@ -608,13 +560,13 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 									null, 
 									confirmationKeyDTO.getConfirmationKey() + "", 
 									system, 
-									this.identityToken)
+									identityToken)
 								.chain(() -> {
 									// Find and expire confirmation key
-									return newIp.findClassification(dbSession, ConfirmationKey, system, finalIdentityToken)
+									return newIp.findClassification(dbSession, ConfirmationKey, system, identityToken)
 										.chain(classification -> {
 											if (classification != null) {
-												return classification.expire(dbSession, Duration.of(2, HOURS), this.identityToken)
+												return classification.expire(dbSession, Duration.of(2, HOURS), identityToken)
 													.map(v -> confirmationKeyDTO);
 											} else {
 												return Uni.createFrom().item(confirmationKeyDTO);
@@ -635,7 +587,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	 * @param profileServiceDTO The profile service DTO containing client information
 	 * @return A Uni emitting the created or found device involved party
 	 */
-	Uni<IInvolvedParty<?, ?>> createDeviceIP(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO)
+	Uni<IInvolvedParty<?, ?>> createDeviceIP(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO,ISystems<?,?> system,UUID... identityToken)
 	{
 		log.log(Level.FINE, "Creating device IP for web client UUID: {0}", profileServiceDTO.getWebClientUUID());
 		String webClientUUID = profileServiceDTO.getWebClientUUID().toString();
@@ -643,11 +595,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 		// Use SessionUtil to execute with the provided session
 		return (Uni) SessionUtil.executeWithSession(session, dbSession -> {
 			// Find device type
-			return involvedPartyService.findType(dbSession, TypeDevice.toString(), system.get(), identityToken)
+			return involvedPartyService.findType(dbSession, TypeDevice.toString(), system, identityToken)
 				.chain(deviceType -> {
 					// Try to find existing device IP
 					return involvedPartyService.get().builder(dbSession)
-						.findByTypeAll(TypeDevice.toString(), webClientUUID, system.get(), identityToken)
+						.findByTypeAll(TypeDevice.toString(), webClientUUID, system, identityToken)
 						.latestFirst()
 						.setMaxResults(1)
 						.get()
@@ -660,14 +612,14 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 									.setValue(webClientUUID);
 							
 							// Create involved party
-							return (Uni) involvedPartyService.create(dbSession, system.get(), deviceIDType, false, identityToken)
+							return (Uni) involvedPartyService.create(dbSession, system, deviceIDType, false, identityToken)
 								.chain(newIp -> {
 									// Add involved party type
 									return newIp.addOrReuseInvolvedPartyType(
 													dbSession, NoClassification.toString(),
 											deviceType, 
 											webClientUUID, 
-											system.get(), 
+											system, 
 											identityToken)
 										.chain(() -> Uni.createFrom().item(newIp));
 								});
@@ -686,7 +638,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	 * @param identityToken The identity tokens for security
 	 * @return A Uni emitting the updated involved party
 	 */
-	Uni<IInvolvedParty<?, ?>> updateLatestVisit(Mutiny.Session session, IInvolvedParty<?, ?> newIp,
+	Uni<IInvolvedParty<?, ?>> updateLatestVisit(Mutiny.Session session, IInvolvedParty<?, ?> newIp,ISystems<?,?> system,
 	                                       java.util.UUID... identityToken)
 	{
 		log.log(Level.FINE, "Updating last visit time for involved party: {0}", newIp.getId());
@@ -698,7 +650,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			return newIp.addOrUpdateClassification(dbSession, LastVisitTime,
 					null,
 					lastVisit,
-					system.get(),
+					system,
 					identityToken)
 				// Chain with Uni.createFrom().item(newIp) to return the involved party
 				.chain(() -> Uni.createFrom().item(newIp))
@@ -720,7 +672,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 	}
 	
 	@Override
-	public Uni<UserLoginDTO<?>> verifyPasswordForUser(Mutiny.Session session, UserLoginDTO<?> userLoginDTO, IEnterprise<?, ?> enterprise, java.util.UUID... identityToken)
+	public Uni<UserLoginDTO<?>> verifyPasswordForUser(Mutiny.Session session, UserLoginDTO<?> userLoginDTO, IEnterprise<?, ?> enterprise,ISystems<?,?>system, java.util.UUID... identityToken)
 	{
 		log.log(Level.FINE, "Verifying password for user: {0}", userLoginDTO.getUserName());
 		
@@ -740,7 +692,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 			return passwordsService.findByUsernameAndPassword(
 							dbSession, userLoginDTO.getUserName(),
 					userLoginDTO.getPassword(),
-					system.get(), 
+					system, 
 					true, 
 					identityToken)
 				.map(ip -> {
