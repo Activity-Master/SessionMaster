@@ -9,19 +9,18 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party
 import com.guicedee.activitymaster.sessions.services.IUserSession;
 import io.smallrye.mutiny.Uni;
 
-import lombok.extern.java.Log;
+import lombok.extern.log4j.Log4j2;
 
 import java.io.Serial;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.logging.Level;
 
 import static com.guicedee.client.IGuiceContext.*;
 import static com.guicedee.guicedinjection.interfaces.ObjectBinderKeys.*;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Log
+@Log4j2
 public class UserSession
 		implements IUserSession<UserSession>
 {
@@ -48,7 +47,7 @@ public class UserSession
 		}
 		catch (JsonProcessingException e)
 		{
-			log.log(Level.SEVERE, "Couldn't make Session Output", e);
+			log.error("Couldn't make Session Output", e);
 			return "Something went very wrong!" + e.getMessage();
 		}
 	}
@@ -81,7 +80,7 @@ public class UserSession
 		if (values.containsKey(key) && values.get(key)
 		                                     .equals(result))
 		{
-			log.log(Level.FINER, "No session update required, value is the same");
+			log.trace("No session update required, value is the same");
 		}
 		else
 		{
@@ -121,12 +120,12 @@ public class UserSession
 		}
 		catch (InvalidDefinitionException ide)
 		{
-			log.log(Level.FINE, MessageFormat.format("Invalid Session Object Deserialization - {0} / {1}", key, type.getSimpleName()));
+			log.debug(MessageFormat.format("Invalid Session Object Deserialization - {0} / {1}", key, type.getSimpleName()));
 			return null;
 		}
 		catch (Throwable e)
 		{
-			log.log(Level.WARNING, "Unable to deserialize session object - ", e);
+			log.warn("Unable to deserialize session object - ", e);
 			return null;
 		}
 	}
@@ -139,8 +138,8 @@ public class UserSession
 		
 		// Create a new Uni with explicit type
 		IUserSession<?> session = this;
-		return Uni.createFrom().item(session)
-		         .onFailure().invoke(error -> log.log(Level.SEVERE, "Error setting involved party: " + error.getMessage(), error))
+  return Uni.createFrom().item(session)
+		         .onFailure().invoke(error -> log.error("Error setting involved party: " + error.getMessage(), error))
 		         .map(result -> (IUserSession<?>) result);
 	}
 	
@@ -161,9 +160,9 @@ public class UserSession
 				// Get the involved party reactively using the provided session
 				return service.findByID(session, id)
 					.onItem().invoke(party -> this.involvedParty = party)
-					.onFailure().invoke(error -> log.log(Level.SEVERE, "Error getting involved party: " + error.getMessage(), error));
+					.onFailure().invoke(error -> log.error("Error getting involved party: " + error.getMessage(), error));
 			} catch (Exception e) {
-				log.log(Level.SEVERE, "Error getting involved party: " + e.getMessage(), e);
+				log.error("Error getting involved party: " + e.getMessage(), e);
 				return Uni.createFrom().failure(e);
 			}
 		}
