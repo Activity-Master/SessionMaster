@@ -241,43 +241,9 @@ public class UserSessionService
             }
         }).chain(sessionString -> {
             IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
-            
-            return resourceItemService.findByUUID(dbSession, session.getResourceItemID())
-                    .chain(resourceItem -> {
-                        if (resourceItem != null) {
-                            return resourceItem.getDataRow(dbSession)
-                                    .map(dataRow -> {
-                                        if (dataRow != null) {
-                                            resourceItem.updateData(dbSession, sessionString.getBytes(), system, identityToken);
-                                            return session;
-                                        } else {
-                                            throw new ResourceItemException("Cannot update a session that has no active data row attached");
-                                        }
-                                    });
-                        } else {
-                            if (session.getResourceItemID() == null && session.getDataID() == null) {
-                                // Check if the session has an involved party using the reactive pattern
-                                return session.getInvolvedParty(dbSession)
-                                    .chain(involvedPartyResult -> {
-                                        if (involvedPartyResult != null) {
-                                            return getSession(dbSession, involvedParty, session, system, identityToken);
-                                        } else {
-                                            return Uni.createFrom().failure(
-                                                new ResourceItemException("Cannot update a session that has no resource item UUID attached"));
-                                        }
-                                    });
-                            }
-                            return Uni.createFrom().failure(
-                                    new ResourceItemException("Cannot update a session that has no resource item UUID attached"));
-                        }
-                    });
-        })
-        .onFailure().invoke(error -> log.log(Level.SEVERE, "Error updating session", error))
-        .chain(result -> {
-            if (result != null) {
-                return result.setInvolvedParty(involvedParty);
-            }
-            return Uni.createFrom().item(result);
-        });
+												return resourceItemService.updateResourceData(dbSession,sessionString.getBytes(),session.getResourceItemID())
+																				.replaceWith(dbSession);
+								
+        }).map(a->(IUserSession<?>) a);
     }
 }
