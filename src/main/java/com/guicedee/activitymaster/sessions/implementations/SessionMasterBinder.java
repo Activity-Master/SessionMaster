@@ -3,11 +3,9 @@ package com.guicedee.activitymaster.sessions.implementations;
 import com.google.inject.*;
 import com.guicedee.activitymaster.sessions.SessionLoginService;
 import com.guicedee.activitymaster.sessions.UserSessionService;
-import com.guicedee.activitymaster.sessions.implementations.providers.UserSecurityProvider;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.IUserSessionService;
-import com.guicedee.activitymaster.sessions.services.dto.UserSecurityDTO;
-import com.guicedee.guicedinjection.interfaces.IGuiceModule;
+import com.guicedee.client.services.lifecycle.IGuiceModule;
 
 public class SessionMasterBinder
 		extends PrivateModule

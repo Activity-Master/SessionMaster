@@ -2,7 +2,6 @@ package com.guicedee.activitymaster.sessions;
 
 import com.google.common.base.Strings;
 import com.google.inject.*;
-import com.google.inject.name.Named;
 import com.guicedee.activitymaster.fsdm.client.services.*;
 import com.guicedee.activitymaster.fsdm.client.services.annotations.*;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.IWarehouseTable;
@@ -18,7 +17,7 @@ import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.activitymaster.sessions.services.dto.*;
 import com.guicedee.activitymaster.sessions.util.SessionUtil;
-import com.guicedee.guicedinjection.pairing.Pair;
+import com.guicedee.client.utils.Pair;
 import com.guicedee.services.jsonrepresentation.IJsonRepresentation;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -42,7 +41,6 @@ import static com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileIdentificationTypes.*;
 import static com.guicedee.activitymaster.profiles.services.interfaces.IRolesService.*;
-import static com.guicedee.activitymaster.sessions.services.IUserSessionService.*;
 import static com.guicedee.activitymaster.sessions.services.classifications.SessionClassifications.*;
 import static java.time.temporal.ChronoUnit.*;
 
