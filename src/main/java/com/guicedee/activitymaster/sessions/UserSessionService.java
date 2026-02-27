@@ -240,10 +240,10 @@ public class UserSessionService
 												.chain(resourceItem -> {
 														if (resourceItem != null)
 														{
-																resourceItem.expire();
-																return resourceItem
+																return resourceItem.expire(dbSession)
+																								.chain(expired -> expired
 																								.getDataRow(dbSession)
-																								.map(data -> original);
+																								.map(data -> original));
 														}
 														else
 														{
