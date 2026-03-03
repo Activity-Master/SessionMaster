@@ -7,7 +7,7 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.syste
 import com.guicedee.activitymaster.profiles.deserializers.LocalDateTimeDeserializer;
 import com.guicedee.activitymaster.profiles.deserializers.LocalDateTimeSerializer;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
-import com.guicedee.services.jsonrepresentation.IJsonRepresentation;
+import com.guicedee.modules.services.jsonrepresentation.IJsonRepresentation;
 
 import java.io.Serial;
 import java.io.Serializable;
