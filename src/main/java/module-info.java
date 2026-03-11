@@ -12,7 +12,7 @@ module com.guicedee.activitymaster.sessions {
 	
 	requires transitive com.guicedee.guicedinjection;
 	requires org.json;
-	requires com.guicedee.guicedpersistence;
+	requires com.guicedee.persistence;
 	
 	requires org.mapstruct;
 
