@@ -1,4 +1,4 @@
-import com.guicedee.activitymaster.fsdm.client.services.systems.IActivityMasterSystem;
+import com.guicedee.activitymaster.fsdm.client.services.systems.IMasterSystem;
 import com.guicedee.activitymaster.sessions.SessionMasterSystem;
 import com.guicedee.activitymaster.sessions.implementations.SessionMasterBinder;
 import com.guicedee.activitymaster.sessions.implementations.SessionsModuleInclusion;
@@ -40,7 +40,7 @@ module com.guicedee.activitymaster.sessions {
 	requires com.entityassist;
 	requires org.hibernate.reactive;
 	
-	provides IActivityMasterSystem with SessionMasterSystem;
+	provides IMasterSystem with SessionMasterSystem;
 	provides IGuiceModule with SessionMasterBinder;
 	provides IGuiceScanModuleInclusions with SessionsModuleInclusion;
 	//provides IOnCallScopeExit with CallScopeOnExitSessionPersist;
