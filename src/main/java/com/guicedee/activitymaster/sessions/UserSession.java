@@ -1,9 +1,9 @@
 package com.guicedee.activitymaster.sessions;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.exc.InvalidDefinitionException;
 import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.sessions.services.IUserSession;
@@ -28,10 +28,8 @@ public class UserSession
 	private static final long serialVersionUID = 1L;
 	@JsonValue
 	private final Map<String, String> values = new LinkedHashMap<>();
-	
 	private IInvolvedParty<?,?> involvedParty;
-	//private ISystems<?,?> system;
-	
+
 	private UUID resourceItemID;
 	private UUID dataID;
 	
@@ -45,7 +43,7 @@ public class UserSession
 					.withoutFeatures(SerializationFeature.FAIL_ON_EMPTY_BEANS)
 					.writeValueAsString(this);
 		}
-		catch (JsonProcessingException e)
+		catch (JacksonException e)
 		{
 			log.error("Couldn't make Session Output", e);
 			return "Something went very wrong!" + e.getMessage();
@@ -68,7 +66,7 @@ public class UserSession
 			{
 				result = get(DefaultObjectMapper).writeValueAsString(object);
 			}
-			catch (JsonProcessingException e)
+			catch (JacksonException e)
 			{
 				throw new RuntimeException(e);
 			}
@@ -169,24 +167,6 @@ public class UserSession
 		
 		return Uni.createFrom().nullItem();
 	}
-	
-/*
-	@Override
-	public ISystems<?,?> getSystem()
-	{
-		if (system == null && involvedParty != null)
-		{
-			system = IGuiceContext.get(ISystemsService.class).getActivityMaster(null,null,null);
-		}
-		return system;
-	}
-	
-	@Override
-	public UserSession setSystem(ISystems<?,?> system)
-	{
-		this.system = system;
-		return this;
-	}*/
 	
 	@Override
 	public Map<String, String> getValues()

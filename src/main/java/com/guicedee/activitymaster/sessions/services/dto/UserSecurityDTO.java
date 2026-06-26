@@ -1,8 +1,8 @@
 package com.guicedee.activitymaster.sessions.services.dto;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.profiles.deserializers.LocalDateTimeDeserializer;
 import com.guicedee.activitymaster.profiles.deserializers.LocalDateTimeSerializer;

@@ -33,8 +33,8 @@ module com.guicedee.activitymaster.sessions {
 	requires com.google.common;
 
 	requires com.fasterxml.jackson.annotation;
-	requires com.fasterxml.jackson.databind;
-	requires com.fasterxml.jackson.core;
+	requires tools.jackson.databind;
+	requires tools.jackson.core;
 	//requires net.sf.uadetector.core;
 	requires transitive com.guicedee.activitymaster.fsdm.client;
 	requires com.entityassist;
@@ -46,8 +46,8 @@ module com.guicedee.activitymaster.sessions {
 	//provides IOnCallScopeExit with CallScopeOnExitSessionPersist;
 	
 	exports com.guicedee.activitymaster.sessions;
-	opens com.guicedee.activitymaster.sessions to com.google.guice, com.fasterxml.jackson.databind;
-	opens com.guicedee.activitymaster.sessions.services.dto to com.google.guice, com.fasterxml.jackson.databind;
+	opens com.guicedee.activitymaster.sessions to com.google.guice, tools.jackson.databind;
+	opens com.guicedee.activitymaster.sessions.services.dto to com.google.guice, tools.jackson.databind;
 	
 	exports com.guicedee.activitymaster.sessions.implementations;
 	opens com.guicedee.activitymaster.sessions.implementations to com.google.guice;

@@ -28,9 +28,9 @@ package com.guicedee.activitymaster.sessions;
 	* See ReactivityMigrationGuide.md for more details on these rules.
 	*/
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.MapType;
-import com.fasterxml.jackson.databind.type.TypeFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.type.MapType;
+import tools.jackson.databind.type.TypeFactory;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.guicedee.activitymaster.fsdm.client.services.IResourceItemService;
@@ -288,7 +288,7 @@ public class UserSessionService
 																}
 																return sessionString;
 														}
-														catch (IOException e)
+														catch (Exception e)
 														{
 																log.log(Level.SEVERE, "Error serializing session", e);
 																throw new RuntimeException(e);
