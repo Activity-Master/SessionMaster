@@ -26,6 +26,23 @@ public interface ISessionLoginService<J extends ISessionLoginService<J>>
 	Uni<ProfileServiceDTO<?>> loginVisitor(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken);
 
 	/**
+	 * Stateless twin of {@link #loginVisitor(Mutiny.Session, ProfileServiceDTO, ISystems, java.util.UUID...)}.
+	 * <p>
+	 * Resolves (or creates) the device/guest involved party for the supplied web-client UUID and persists
+	 * the session entirely on a {@link Mutiny.StatelessSession}. This is the fully stateless entry point for
+	 * the module's core purpose — persisted session data identified by the unique JWebMP key, with the backing
+	 * guest/visitor involved party provisioned on demand. The session must be established by a top-level caller
+	 * via {@code SessionUtils.withActivityMasterStateless(...)} / {@code withSystemAndTokenStateless(...)}.
+	 *
+	 * @param session The Mutiny.StatelessSession to use for database operations
+	 * @param profileServiceDTO The profile service DTO carrying the web-client UUID
+	 * @param system The system requesting the operation
+	 * @param identityToken The identity tokens for security
+	 * @return A Uni emitting the ProfileServiceDTO with login information
+	 */
+	Uni<ProfileServiceDTO<?>> loginVisitor(Mutiny.StatelessSession session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken);
+
+	/**
 	 * Sets a user as logged in
 	 *
 	 * @param session The Mutiny.Session to use for database operations

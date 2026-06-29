@@ -110,6 +110,13 @@ public class SessionMasterSystem
                 .replaceWithVoid();
     }
     
+    /** Stateless variant — the Session Master system has no default data to provision. */
+    @Override
+    public Uni<Void> createDefaults(Mutiny.StatelessSession session, IEnterprise<?, ?> enterprise)
+    {
+        return Uni.createFrom().voidItem();
+    }
+
     @Override
     public Uni<Void> postStartup(Mutiny.Session session, IEnterprise<?, ?> enterprise)
     {

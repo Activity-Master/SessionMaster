@@ -303,4 +303,140 @@ public class UserSessionService
 												})
 												.map(a -> (IUserSession<?>) a);
 		}
+
+		// ---- Stateless twins ----
+
+		@Override
+		public Uni<IUserSession<?>> getSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, java.util.UUID... identityToken)
+		{
+				return getSession(dbSession, involvedParty, new UserSession(), system, identityToken);
+		}
+
+		@Override
+		public Uni<IUserSession<?>> getSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
+		{
+				if (session == null && involvedParty == null)
+				{
+						return Uni.createFrom().item(session);
+				}
+				return involvedParty
+						.findResourceItem(dbSession, SessionClassifications.SessionObject.toString(), null, system, false, false, identityToken)
+						.chain(resourceItem -> {
+								if (resourceItem == null)
+								{
+										try
+										{
+												String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
+												return createNewSessionResourceItem(dbSession, involvedParty, system, sessionString, resourceItemService, identityToken, session);
+										}
+										catch (Exception e)
+										{
+												log.log(Level.SEVERE, "Error serializing session", e);
+												return Uni.createFrom().failure(e);
+										}
+								}
+								IResourceItem<?, ?> secondary = (IResourceItem<?, ?>) resourceItem.getSecondary();
+								return secondary.getData(dbSession, identityToken)
+										.chain(data -> {
+												String currentSessionValue = new String(data);
+												String sessionString = Strings.isNullOrEmpty(currentSessionValue) ? "{}" : currentSessionValue;
+												if (!("{}".equals(sessionString)))
+												{
+														try
+														{
+																HashMap<String, String> returned = get(DefaultObjectMapper).readValue(sessionString, mapType);
+																session.getValues().putAll(returned);
+														}
+														catch (Throwable ioException)
+														{
+																log.log(Level.FINE, "Error reading incoming session", ioException);
+														}
+												}
+												session.setResourceItemID(secondary.getId());
+												session.setDataID(secondary.getId());
+												return Uni.createFrom().item(session);
+										});
+						})
+						.chain(result -> result != null ? result.setInvolvedParty(involvedParty) : Uni.createFrom().item(result));
+		}
+
+		private Uni<IUserSession<?>> createNewSessionResourceItem(
+			Mutiny.StatelessSession dbSession,
+			IInvolvedParty<?, ?> involvedParty,
+			ISystems<?, ?> system,
+			String sessionString,
+			IResourceItemService<?> resourceItemService,
+			java.util.UUID[] identityToken,
+			IUserSession<?> session)
+		{
+				return resourceItemService
+						.create(dbSession, JsonPacket.toString(), "application/json", sessionString.getBytes(), system, identityToken)
+						.chain(ri -> involvedParty
+								.addResourceItem(dbSession, SessionClassifications.SessionObject.toString(), ri, "", system, identityToken)
+								.chain(relationshipValue -> {
+										IResourceItem<?, ?> secondary = (IResourceItem<?, ?>) relationshipValue.getSecondary();
+										return secondary.getDataRow(dbSession, identityToken).map(data -> {
+												session.setResourceItemID(secondary.getId());
+												session.setDataID(data.getId());
+												return session;
+										});
+								}));
+		}
+
+		@Override
+		public Uni<IUserSession<?>> updateCache(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
+		{
+				return Uni.createFrom().item(original);
+		}
+
+		@Override
+		public Uni<Void> removeCache(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty)
+		{
+				return Uni.createFrom().voidItem();
+		}
+
+		@Override
+		public Uni<IUserSession<?>> expireSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken)
+		{
+				if (original == null && involvedParty == null)
+				{
+						return Uni.createFrom().item(original);
+				}
+				IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
+				return resourceItemService.findByUUID(dbSession, original.getResourceItemID())
+						.chain(resourceItem -> {
+								if (resourceItem != null)
+								{
+										return resourceItem.expire(dbSession)
+												.chain(expired -> expired.getDataRow(dbSession).map(data -> original));
+								}
+								return Uni.createFrom().item(original);
+						})
+						.onFailure().invoke(error -> log.log(Level.SEVERE, "Error expiring session (stateless)", error))
+						.chain(result -> result != null ? result.setInvolvedParty(involvedParty) : Uni.createFrom().item(result));
+		}
+
+		@Override
+		public Uni<IUserSession<?>> updateSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken)
+		{
+				if (system.isFake() || (session == null && involvedParty == null))
+				{
+						return Uni.createFrom().item(session);
+				}
+				return Uni.createFrom().item(() -> {
+						try
+						{
+								String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
+								return Strings.isNullOrEmpty(sessionString) ? "{}" : sessionString;
+						}
+						catch (Exception e)
+						{
+								log.log(Level.SEVERE, "Error serializing session", e);
+								throw new RuntimeException(e);
+						}
+				}).chain(sessionString -> {
+						IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
+						return resourceItemService.updateResourceData(dbSession, sessionString.getBytes(), session.getResourceItemID()).replaceWith(dbSession);
+				}).map(a -> (IUserSession<?>) a);
+		}
 }

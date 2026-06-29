@@ -16,7 +16,6 @@ import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
 import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.activitymaster.sessions.services.*;
 import com.guicedee.activitymaster.sessions.services.dto.*;
-import com.guicedee.activitymaster.sessions.util.SessionUtil;
 import com.guicedee.client.utils.Pair;
 import com.guicedee.modules.services.jsonrepresentation.IJsonRepresentation;
 import io.smallrye.mutiny.Uni;
@@ -145,6 +144,49 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
         return result;
     }
 
+    @Override
+    public Uni<ProfileServiceDTO<?>> loginVisitor(Mutiny.StatelessSession session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
+        log.log(Level.FINE, "Login visitor (stateless) with web client UUID: {0}", profileServiceDTO.getWebClientUUID());
+
+        final ProfileServiceDTO<?> dto = profileServiceDTO;
+        IInvolvedParty<?, ?> iInvolvedParty = involvedPartyService.get();
+
+        // Find the device (guest/visitor) involved party for this web-client UUID
+        Uni<IInvolvedParty<?, ?>> deviceIPUni = (Uni) iInvolvedParty.builder(session)
+                .findByType(TypeDevice.toString(), dto.getWebClientUUID().toString(), system, identityToken)
+                .get();
+
+        // Create one on demand when none exists yet
+        deviceIPUni = deviceIPUni.onFailure(NoResultException.class).recoverWithUni(() -> {
+            log.log(Level.FINE, "Device IP not found, creating new one (stateless)");
+            return createDeviceIP(session, dto, system, identityToken);
+        });
+
+        deviceIPUni = deviceIPUni.onFailure().invoke(error -> {
+            if (!(error instanceof NoResultException)) {
+                log.log(Level.SEVERE, "Error finding device IP (stateless): {0}", String.valueOf(error));
+            }
+        });
+
+        return (Uni) deviceIPUni.chain(deviceIP -> {
+                    dto.setInvolvedParty(deviceIP);
+                    dto.setIdentityToken(deviceIP.getId());
+
+                    IInvolvedParty<?, ?> foundIPCurrentOnDevice = dto.findInvolvedParty();
+                    if (foundIPCurrentOnDevice == null) {
+                        foundIPCurrentOnDevice = deviceIP;
+                    } else {
+                        dto.setInvolvedParty(foundIPCurrentOnDevice);
+                        dto.setIdentityToken(foundIPCurrentOnDevice.getId());
+                    }
+
+                    return updateLatestVisit(session, foundIPCurrentOnDevice, system, identityToken);
+                })
+                .chain(updatedIP -> sessionMasterService.getSession(session, updatedIP, system, identityToken))
+                .map(userSession -> dto)
+                .onFailure().invoke(error -> log.log(Level.SEVERE, "Error in loginVisitor (stateless): {0}", String.valueOf(error)));
+    }
+
     /**
      * Authenticates a user with the given login DTO.
      * This method has been migrated to use reactive patterns.
@@ -205,8 +247,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     public Uni<ProfileServiceDTO<?>> loginUser(Mutiny.Session session, UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, java.util.UUID... identityToken) {
         log.log(Level.FINE, "Login user: {0}, already verified: {1}", new Object[]{profileServiceDTO.getUserName(), alreadyVerified});
 
-        // Use SessionUtil to execute with the provided session
-        return (Uni) SessionUtil.executeWithSession(session, dbSession ->
+        // Operate directly on the caller-provided session (this service never opens its own session/tx)
+        return (Uni) withSession(session, dbSession ->
                 // Find or create device IP
                 findOrCreateDeviceIP(dbSession, profileServiceDTO, system, identityToken)
                         .chain(deviceIP -> {
@@ -287,8 +329,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 
     @Override
     public Uni<ProfileServiceDTO<?>> logoutUser(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
-        // Use SessionUtil to execute with the provided session
-        return SessionUtil.executeWithSession(session, dbSession -> {
+        // Operate directly on the caller-provided session (this service never opens its own session/tx)
+        return withSession(session, dbSession -> {
             // Create device IP
             return createDeviceIP(dbSession, profileServiceDTO, system, identityToken)
                     .chain(deviceIP -> {
@@ -449,8 +491,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     @Override
     public Uni<UserConfirmationKeyDTO<?>> registerVisitor(Mutiny.Session session, UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
         log.log(Level.FINE, "Registering visitor: {0}", userRegistrationDTO.getUserName());
-        // Use SessionUtil to execute with the provided session
-        return (Uni) SessionUtil.executeWithSession(session, dbSession -> {
+        // Operate directly on the caller-provided session (this service never opens its own session/tx)
+        return (Uni) withSession(session, dbSession -> {
             // Check if user already exists
             return involvedPartyService.get().builder(dbSession)
                     .findByIdentificationType(
@@ -580,8 +622,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
         log.log(Level.FINE, "Creating device IP for web client UUID: {0}", profileServiceDTO.getWebClientUUID());
         String webClientUUID = profileServiceDTO.getWebClientUUID().toString();
 
-        // Use SessionUtil to execute with the provided session
-        return (Uni) SessionUtil.executeWithSession(session, dbSession -> {
+        // Operate directly on the caller-provided session (this service never opens its own session/tx)
+        return (Uni) withSession(session, dbSession -> {
             // Find device type
             return involvedPartyService.findType(dbSession, TypeDevice.toString(), system, identityToken)
                     .chain(deviceType -> {
@@ -618,6 +660,42 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     /**
+     * Stateless twin of {@link #createDeviceIP(Mutiny.Session, ProfileServiceDTO, ISystems, UUID...)} —
+     * resolves or creates the device (guest/visitor) involved party for the web-client UUID on a
+     * {@link Mutiny.StatelessSession}.
+     */
+    Uni<IInvolvedParty<?, ?>> createDeviceIP(Mutiny.StatelessSession session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) {
+        log.log(Level.FINE, "Creating device IP (stateless) for web client UUID: {0}", profileServiceDTO.getWebClientUUID());
+        String webClientUUID = profileServiceDTO.getWebClientUUID().toString();
+
+        return (Uni) withSession(session, dbSession ->
+                involvedPartyService.findType(dbSession, TypeDevice.toString(), system, identityToken)
+                        .chain(deviceType ->
+                                involvedPartyService.get().builder(dbSession)
+                                        .findByTypeAll(TypeDevice.toString(), webClientUUID, system, identityToken)
+                                        .latestFirst()
+                                        .setMaxResults(1)
+                                        .get()
+                                        .onItem().ifNotNull().transform(ip -> (IInvolvedParty<?, ?>) ip)
+                                        .onItem().ifNull().switchTo(() -> {
+                                            log.log(Level.FINE, "Device IP not found, creating new one (stateless)");
+                                            Pair<String, String> deviceIDType = new Pair<>();
+                                            deviceIDType.setKey(IdentificationTypeWebClientUUID.toString())
+                                                    .setValue(webClientUUID);
+
+                                            return (Uni) involvedPartyService.create(dbSession, system, deviceIDType, false, identityToken)
+                                                    .chain(newIp -> newIp.addOrReuseInvolvedPartyType(
+                                                                    dbSession, NoClassification.toString(),
+                                                                    deviceType,
+                                                                    webClientUUID,
+                                                                    system,
+                                                                    identityToken)
+                                                            .chain(() -> Uni.createFrom().item(newIp)));
+                                        }))
+                        .onFailure().invoke(error -> log.log(Level.SEVERE, "Error creating device IP (stateless): {0}", String.valueOf(error))));
+    }
+
+    /**
      * Updates the last visit time for an involved party.
      * This method has been migrated to use reactive patterns.
      *
@@ -631,8 +709,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
         log.log(Level.FINE, "Updating last visit time for involved party: {0}", newIp.getId());
         String lastVisit = convertToUTCDateTime(com.entityassist.RootEntity.getNow()).format(DateTimeFormatter.ISO_DATE);
 
-        // Use SessionUtil to execute with the provided session
-        return (Uni) SessionUtil.executeWithSession(session, dbSession -> {
+        // Operate directly on the caller-provided session (this service never opens its own session/tx)
+        return (Uni) withSession(session, dbSession -> {
             // Use addOrUpdateClassification which already returns a reactive type
             return newIp.addOrUpdateClassification(dbSession, LastVisitTime,
                             (String) null,
@@ -644,6 +722,25 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
                     // Add error handling with onFailure().invoke()
                     .onFailure().invoke(error -> log.log(Level.SEVERE, "Error updating last visit time: {0}", String.valueOf(error)));
         });
+    }
+
+    /**
+     * Stateless twin of {@link #updateLatestVisit(Mutiny.Session, IInvolvedParty, ISystems, UUID...)} —
+     * stamps the last-visit classification on a {@link Mutiny.StatelessSession}.
+     */
+    Uni<IInvolvedParty<?, ?>> updateLatestVisit(Mutiny.StatelessSession session, IInvolvedParty<?, ?> newIp, ISystems<?, ?> system,
+                                                java.util.UUID... identityToken) {
+        log.log(Level.FINE, "Updating last visit time (stateless) for involved party: {0}", newIp.getId());
+        String lastVisit = convertToUTCDateTime(com.entityassist.RootEntity.getNow()).format(DateTimeFormatter.ISO_DATE);
+
+        return (Uni) withSession(session, dbSession ->
+                newIp.addOrUpdateClassification(dbSession, LastVisitTime,
+                                (String) null,
+                                lastVisit,
+                                system,
+                                identityToken)
+                        .chain(() -> Uni.createFrom().item(newIp))
+                        .onFailure().invoke(error -> log.log(Level.SEVERE, "Error updating last visit time (stateless): {0}", String.valueOf(error))));
     }
 
     @Override
@@ -668,8 +765,8 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
             return Uni.createFrom().failure(new ProfileServiceException("Passwords cannot be empty"));
         }
 
-        // Use SessionUtil to execute with the provided session
-        return (Uni) SessionUtil.executeWithSession(session, dbSession -> {
+        // Operate directly on the caller-provided session (this service never opens its own session/tx)
+        return (Uni) withSession(session, dbSession -> {
             // Find involved party by username and password
             return passwordsService.findByUsernameAndPassword(
                             dbSession, userLoginDTO.getUserName(),
@@ -683,5 +780,26 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
                     })
                     .onFailure().invoke(error -> log.log(Level.SEVERE, "Error verifying password: {0}", String.valueOf(error)));
         });
+    }
+
+    /**
+     * Executes a reactive function on the <strong>caller-provided</strong> {@link Mutiny.Session}.
+     * <p>
+     * This service never opens its own session or transaction — top-level entry points (REST resources,
+     * event-bus consumers, the {@code UserSessionProvider}) are responsible for establishing the session
+     * via {@code SessionUtils.withActivityMaster(...)} and passing it in. This pass-through simply keeps
+     * every operation on the one session that was handed to the method.
+     */
+    private static <T> Uni<T> withSession(Mutiny.Session session, java.util.function.Function<Mutiny.Session, Uni<T>> function) {
+        return function.apply(session);
+    }
+
+    /**
+     * Stateless twin of {@link #withSession(Mutiny.Session, java.util.function.Function)} — executes the
+     * function on the caller-provided {@link Mutiny.StatelessSession} established by
+     * {@code SessionUtils.withActivityMasterStateless(...)} (or {@code withSystemAndTokenStateless}).
+     */
+    private static <T> Uni<T> withSession(Mutiny.StatelessSession session, java.util.function.Function<Mutiny.StatelessSession, Uni<T>> function) {
+        return function.apply(session);
     }
 }
