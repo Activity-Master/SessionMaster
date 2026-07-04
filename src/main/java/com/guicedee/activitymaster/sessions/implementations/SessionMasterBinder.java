@@ -6,7 +6,9 @@ import com.guicedee.activitymaster.sessions.UserSessionService;
 import com.guicedee.activitymaster.sessions.services.ISessionLoginService;
 import com.guicedee.activitymaster.sessions.services.IUserSessionService;
 import com.guicedee.client.services.lifecycle.IGuiceModule;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 public class SessionMasterBinder
 		extends PrivateModule
 		implements IGuiceModule<SessionMasterBinder>
@@ -15,6 +17,7 @@ public class SessionMasterBinder
 	@Override
 	protected void configure()
 	{
+		log.info("🔑 Using User Session Activity Master Module");
 		@SuppressWarnings("Convert2Diamond")
 		Key<IUserSessionService<?>> genericKey = Key.get(new TypeLiteral<IUserSessionService<?>>() {});
 		@SuppressWarnings("Convert2Diamond")

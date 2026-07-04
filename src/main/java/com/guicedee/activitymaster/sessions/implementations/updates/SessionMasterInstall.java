@@ -67,4 +67,39 @@ public class SessionMasterInstall implements ISystemUpdate
                     });
             });
     }
+
+    /** Stateless twin of {@link #update(Mutiny.Session, IEnterprise)}. */
+    @Override
+    public Uni<Boolean> update(Mutiny.StatelessSession session, IEnterprise<?,?> enterprise)
+    {
+        IClassificationService<?> classificationService = get(IClassificationService.class);
+        IEventService<?> eventsService = get(IEventService.class);
+        SessionMasterSystem systemM = get(SessionMasterSystem.class);
+
+        logProgress("Session Master", "Loading Default Session Classifications");
+
+        return systemM.getSystem(session, enterprise)
+            .chain(system -> classificationService.create(session, SessionInformation, system)
+                    .chain(() -> classificationService.create(session, SessionLastUpdateTime, system, SessionInformation))
+                    .chain(() -> classificationService.create(session, SessionClassifications.SessionObject, system, SessionInformation))
+                    .chain(() -> classificationService.create(session, SystemPerformed, system, SessionInformation))
+                    .chain(() -> classificationService.create(session, SessionClassifications.UserLoggedIn, system, SessionInformation))
+                    .chain(() -> classificationService.create(session, SessionClassifications.UserLoggedOut, system, SessionInformation))
+                    .chain(() -> classificationService.create(session, SessionClassifications.UserSessionExpired, system, SessionInformation))
+                    .chain(() -> classificationService.create(session, DeviceUsedBy, system, SessionInformation))
+                    .chain(() -> classificationService.create(session, LogonDetails, system, SessionInformation))
+                    .chain(() -> classificationService.create(session, LastLoginTime, system, LogonDetails))
+                    .chain(() -> classificationService.create(session, LastVisitTime, system, LogonDetails))
+                    .chain(() -> classificationService.create(session, ConfirmationKey, system, LogonDetails))
+                    .chain(() -> classificationService.create(session, UserRoles, system, LogonDetails))
+                    .chain(() -> classificationService.create(session, RememberMe, system, LogonDetails))
+                    .chain(() -> classificationService.create(session, LoggedOn, system, LogonDetails))
+                    .chain(() -> systemM.getSystemToken(session, enterprise)
+                        .chain(token -> eventsService.createEventType(session, SiteVisit, system, token)
+                            .chain(() -> eventsService.createEventType(session, UserConfirmedAccount, system, token))
+                            .chain(() -> eventsService.createEventType(session, SessionEventTypes.UserLoggedIn, system, token))
+                            .chain(() -> eventsService.createEventType(session, SessionEventTypes.UserLoggedOut, system, token))
+                            .chain(() -> eventsService.createEventType(session, UserConfirmedAccount, system, token))
+                            .map(result -> true))));
+    }
 }

@@ -633,6 +633,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
                                 .latestFirst()
                                 .setMaxResults(1)
                                 .get()
+                                // A fresh web-client key has no existing device IP — the builder's get() throws
+                                // NoResultException on an empty result, so recover to null to drive the create path.
+                                .onFailure(jakarta.persistence.NoResultException.class).recoverWithNull()
                                 .onItem().ifNotNull().transform(ip -> (IInvolvedParty<?, ?>) ip)
                                 .onItem().ifNull().switchTo(() -> {
                                     // Create new device IP if not found
@@ -676,6 +679,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
                                         .latestFirst()
                                         .setMaxResults(1)
                                         .get()
+                                        // A fresh web-client key has no existing device IP — recover the empty
+                                        // result (NoResultException) to null so the create path below runs.
+                                        .onFailure(jakarta.persistence.NoResultException.class).recoverWithNull()
                                         .onItem().ifNotNull().transform(ip -> (IInvolvedParty<?, ?>) ip)
                                         .onItem().ifNull().switchTo(() -> {
                                             log.log(Level.FINE, "Device IP not found, creating new one (stateless)");
