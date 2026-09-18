@@ -3,12 +3,12 @@ package com.guicedee.activitymaster.sessions;
 /**
  * Reactivity Migration Checklist:
  * <p>
- * [✓] One action per Mutiny.Session at a time
+ * [✓] One action per Mutiny.StatelessSession at a time
  * - All operations on a session are sequential
  * - No parallel operations on the same session
  * <p>
- * [!] Pass Mutiny.Session through the chain
- * - Creates a session using sessionFactory.withSession() but doesn't pass it through a chain
+ * [!] Pass Mutiny.StatelessSession through the chain
+ * - Creates a session using sessionFactory.withStatelessSession() but doesn't pass it through a chain
  * - Uses the session only for a single operation
  * <p>
  * [!] No await() usage
@@ -23,7 +23,7 @@ package com.guicedee.activitymaster.sessions;
  * - Not using Uni.combine().all().unis() with operations that share the same session
  * <p>
  * [!] No session/transaction creation in libraries
- * - Creates a session using sessionFactory.withSession()
+ * - Creates a session using sessionFactory.withStatelessSession()
  * - Should accept a session parameter instead
  * <p>
  * See ReactivityMigrationGuide.md for more details on these rules.
@@ -132,7 +132,7 @@ public class UserSessionProvider
         //todo this logic is in the userSessionService as getSession()
         return null;
         /*
-        IInvolvedParty<?, ?> byUUID = sessionFactory.withSession(session ->
+        IInvolvedParty<?, ?> byUUID = sessionFactory.withStatelessSession(session ->
                                                                      session.withTransaction(tx -> {
                                                                        return involvedPartyService.find(session, localStorageKey)
                                                                                   .onFailure(NoResultException.class)
@@ -181,7 +181,7 @@ public class UserSessionProvider
 
         // Use sessionFactory to create a session for the getSession operation
         // and pass the session as the first parameter
-        return (IUserSession<UserSession>) sessionFactory.withSession(session ->
+        return (IUserSession<UserSession>) sessionFactory.withStatelessSession(session ->
                                                                           sessionMasterService.getSession(session, finalByUUID, finalSystem, finalSystemToken)
             )
                                                .await()

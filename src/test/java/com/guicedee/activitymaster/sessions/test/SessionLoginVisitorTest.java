@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <em>persisted session data identified by the unique JWebMP web-client key, with the backing
  * guest/visitor involved party provisioned on demand.</em>
  *
- * <p>Exercises {@link ISessionLoginService#loginVisitor} on both a {@link Mutiny.Session} and a
+ * <p>Exercises {@link ISessionLoginService#loginVisitor} on both a {@link Mutiny.StatelessSession} and a
  * {@link Mutiny.StatelessSession}: a fresh web-client UUID must create a device (guest/visitor)
  * involved party and persist its session, and re-presenting the same key must resolve the
  * <em>same</em> involved party (the identity guarantee).</p>
@@ -56,7 +56,7 @@ public class SessionLoginVisitorTest
 
 		// Provision the enterprise (registers every system, incl. the Involved Party system that creates
 		// the Device involved-party type, and the Profile/Session systems).
-		sessionFactory.withSession(session -> session.withTransaction(tx ->
+		sessionFactory.withStatelessSession(session -> session.withTransaction(tx ->
 				es.getEnterprise(session, ENTERPRISE)
 						.onFailure().recoverWithUni(t -> {
 							var ent = es.get();
@@ -68,13 +68,13 @@ public class SessionLoginVisitorTest
 						.replaceWith(Uni.createFrom().voidItem())
 		)).await().atMost(Duration.ofMinutes(3));
 
-		IEnterprise<?, ?> enterprise = sessionFactory.withSession(s -> es.getEnterprise(s, ENTERPRISE))
+		IEnterprise<?, ?> enterprise = sessionFactory.withStatelessSession(s -> es.getEnterprise(s, ENTERPRISE))
 				.await().atMost(Duration.ofMinutes(1));
 		assertNotNull(enterprise, "Baseline enterprise must be provisioned in setup");
 
 		// Run all ISystemUpdate installs (Profiles → web-client identification type; Sessions → session
 		// classifications + event types) so the visitor/session flow has its taxonomy.
-		Integer updates = sessionFactory.withSession(session -> session.withTransaction(tx ->
+		Integer updates = sessionFactory.withStatelessSession(session -> session.withTransaction(tx ->
 				es.loadUpdates(session, enterprise)
 		)).await().atMost(Duration.ofMinutes(5));
 		log.info("Applied {} system updates for {}", updates, ENTERPRISE);
@@ -89,7 +89,7 @@ public class SessionLoginVisitorTest
 
 		// First visit — creates the device/guest involved party + persisted session
 		UUID firstIdentity = SessionUtils.<UUID>withActivityMaster(ENTERPRISE, SESSION_SYSTEM, tuple -> {
-			Mutiny.Session session = tuple.getItem1();
+			Mutiny.StatelessSession session = tuple.getItem1();
 			ISessionLoginService<?> loginService = IGuiceContext.get(ISessionLoginService.class);
 			ProfileServiceDTO<?> dto = IGuiceContext.get(ProfileServiceDTO.class);
 			dto.setWebClientUUID(webClientKey);
@@ -102,7 +102,7 @@ public class SessionLoginVisitorTest
 
 		// Second visit with the SAME key — must resolve the SAME involved party
 		UUID secondIdentity = SessionUtils.<UUID>withActivityMaster(ENTERPRISE, SESSION_SYSTEM, tuple -> {
-			Mutiny.Session session = tuple.getItem1();
+			Mutiny.StatelessSession session = tuple.getItem1();
 			ISessionLoginService<?> loginService = IGuiceContext.get(ISessionLoginService.class);
 			ProfileServiceDTO<?> dto = IGuiceContext.get(ProfileServiceDTO.class);
 			dto.setWebClientUUID(webClientKey);

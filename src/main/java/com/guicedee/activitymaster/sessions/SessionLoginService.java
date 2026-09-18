@@ -54,7 +54,7 @@ import static java.time.temporal.ChronoUnit.*;
  * Key changes in this migration:
  * - All methods return Uni types instead of blocking directly
  * - Blocking operations are replaced with reactive alternatives
- * - All methods accept a Mutiny.Session parameter for database operations
+ * - All methods accept a Mutiny.StatelessSession parameter for database operations
  * - Sessions are passed through the chain rather than created within methods
  * - Exceptions are handled within reactive chains
  */
@@ -76,73 +76,6 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
 
     @Inject
     private IPasswordsService<?> passwordsService;
-
-    @Override
-    public Uni<ProfileServiceDTO<?>> loginVisitor(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
-        log.log(Level.FINE, "Login visitor with web client UUID: {0}", profileServiceDTO.getWebClientUUID());
-
-        // Create a final reference to the DTO for use in lambda expressions
-        final ProfileServiceDTO<?> dto = profileServiceDTO;
-
-        // Get the involved party service
-        IInvolvedParty<?, ?> iInvolvedParty = involvedPartyService.get();
-
-        // Find device IP using the builder with session parameter
-        Uni<IInvolvedParty<?, ?>> deviceIPUni = (Uni) iInvolvedParty.builder(session)
-                .findByType(TypeDevice.toString(), dto.getWebClientUUID().toString(), system, identityToken)
-                .get();
-
-        // Handle NoResultException by creating a new device IP
-        deviceIPUni = deviceIPUni.onFailure(NoResultException.class).recoverWithUni(() -> {
-            log.log(Level.FINE, "Device IP not found, creating new one");
-            return createDeviceIP(session, dto, system, identityToken);
-        });
-
-        // Handle any other failures
-        deviceIPUni = deviceIPUni.onFailure().invoke(error -> {
-            if (!(error instanceof NoResultException)) {
-                log.log(Level.SEVERE, "Error finding device IP: {0}", String.valueOf(error));
-            }
-        });
-
-        // Process the device IP and continue the chain
-        Uni<ProfileServiceDTO<?>> result = deviceIPUni.chain(deviceIP -> {
-                    // Set device IP as involved party
-                    dto.setInvolvedParty(deviceIP);
-                    dto.setIdentityToken(deviceIP.getId());
-
-                    // Find involved party
-                    IInvolvedParty<?, ?> foundIPCurrentOnDevice = dto.findInvolvedParty();
-
-                    if (foundIPCurrentOnDevice == null) {
-                        // Use device IP if no involved party found
-                        foundIPCurrentOnDevice = deviceIP;
-                    } else {
-                        // Set found involved party
-                        dto.setInvolvedParty(foundIPCurrentOnDevice);
-                        dto.setIdentityToken(foundIPCurrentOnDevice.getId());
-                    }
-
-                    // Update last visit time
-                    return updateLatestVisit(session, foundIPCurrentOnDevice, system, identityToken);
-                })
-                .chain(updatedIP -> {
-                    // Get session
-                    return sessionMasterService.getSession(session, updatedIP, system, identityToken);
-                })
-                .map(userSession -> {
-                    // Return the DTO
-                    return dto;
-                });
-
-        // Add error handling
-        result = result.onFailure().invoke(error -> {
-            // Log any failures
-            log.log(Level.SEVERE, "Error in loginVisitor: {0}", String.valueOf(error));
-        });
-
-        return result;
-    }
 
     @Override
     public Uni<ProfileServiceDTO<?>> loginVisitor(Mutiny.StatelessSession session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
@@ -191,11 +124,11 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
      * Authenticates a user with the given login DTO.
      * This method has been migrated to use reactive patterns.
      *
-     * @param session  The Mutiny.Session to use for database operations
+     * @param session  The Mutiny.StatelessSession to use for database operations
      * @param loginDTO The login DTO containing username and password
      * @return A Uni emitting the authenticated involved party
      */
-    Uni<IInvolvedParty<?, ?>> authenticate(Mutiny.Session session, UserLoginDTO<?> loginDTO, ISystems<?, ?> system, UUID... identityToken) {
+    Uni<IInvolvedParty<?, ?>> authenticate(Mutiny.StatelessSession session, UserLoginDTO<?> loginDTO, ISystems<?, ?> system, UUID... identityToken) {
         return passwordsService.findByUsernameAndPassword(session, loginDTO.getUserName(),
                 loginDTO.getPassword(),
                 system,
@@ -207,13 +140,13 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
      * Helper method to find or create a device IP for the given profile service DTO.
      * This method simplifies the loginUser implementation.
      *
-     * @param session           The Mutiny.Session to use for database operations
+     * @param session           The Mutiny.StatelessSession to use for database operations
      * @param profileServiceDTO The profile service DTO containing client information
      * @param system            The system requesting the operation
      * @param identityToken     The identity tokens for security
      * @return A Uni emitting the found or created device IP
      */
-    private Uni<IInvolvedParty<?, ?>> findOrCreateDeviceIP(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
+    private Uni<IInvolvedParty<?, ?>> findOrCreateDeviceIP(Mutiny.StatelessSession session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
         log.log(Level.FINE, "Finding or creating device IP for web client UUID: {0}", profileServiceDTO.getWebClientUUID());
 
         if (profileServiceDTO.getWebClientUUID() == null) {
@@ -244,7 +177,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     @Override
-    public Uni<ProfileServiceDTO<?>> loginUser(Mutiny.Session session, UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, java.util.UUID... identityToken) {
+    public Uni<ProfileServiceDTO<?>> loginUser(Mutiny.StatelessSession session, UserLoginDTO<?> profileServiceDTO, boolean alreadyVerified, ISystems<?, ?> system, java.util.UUID... identityToken) {
         log.log(Level.FINE, "Login user: {0}, already verified: {1}", new Object[]{profileServiceDTO.getUserName(), alreadyVerified});
 
         // Operate directly on the caller-provided session (this service never opens its own session/tx)
@@ -323,12 +256,12 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     @Override
-    public Uni<ProfileServiceDTO<?>> loginUser(Mutiny.Session session, UserLoginDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
+    public Uni<ProfileServiceDTO<?>> loginUser(Mutiny.StatelessSession session, UserLoginDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
         return loginUser(session, profileServiceDTO, false, system, identityToken);
     }
 
     @Override
-    public Uni<ProfileServiceDTO<?>> logoutUser(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
+    public Uni<ProfileServiceDTO<?>> logoutUser(Mutiny.StatelessSession session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
         // Operate directly on the caller-provided session (this service never opens its own session/tx)
         return withSession(session, dbSession -> {
             // Create device IP
@@ -392,7 +325,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     @InvolvedPartyEvent(Added)
     @LogItemEvent(Added)
     @Override
-    public Uni<Void> setUserLoggedIn(Mutiny.Session session, @Party("UserLoggingIn") IInvolvedParty<?, ?> newIp,
+    public Uni<Void> setUserLoggedIn(Mutiny.StatelessSession session, @Party("UserLoggingIn") IInvolvedParty<?, ?> newIp,
                                      @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
                                      boolean rememberMe,
                                      @Party("SystemPerformed") ISystems<?, ?> system, java.util.UUID... identityToken) {
@@ -451,7 +384,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     @InvolvedPartyEvent(value = Added)
     @LogItemEvent(value = Added)
     @Override
-    public Uni<Void> setUserLoggedOut(Mutiny.Session session, @Party("UserLoggedOut") IInvolvedParty<?, ?> involvedParty,
+    public Uni<Void> setUserLoggedOut(Mutiny.StatelessSession session, @Party("UserLoggedOut") IInvolvedParty<?, ?> involvedParty,
                                       @Party("DeviceUsedBy") IInvolvedParty<?, ?> deviceIP,
                                       @LogItem("SessionObject") ProfileServiceDTO<?> profileServiceDTO,
                                       @Party("SystemPerformed") ISystems<?, ?> system, java.util.UUID... identityToken) {
@@ -489,7 +422,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     @Override
-    public Uni<UserConfirmationKeyDTO<?>> registerVisitor(Mutiny.Session session, UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
+    public Uni<UserConfirmationKeyDTO<?>> registerVisitor(Mutiny.StatelessSession session, UserRegistrationDTO<?> userRegistrationDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
         log.log(Level.FINE, "Registering visitor: {0}", userRegistrationDTO.getUserName());
         // Operate directly on the caller-provided session (this service never opens its own session/tx)
         return (Uni) withSession(session, dbSession -> {
@@ -527,6 +460,9 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
                                         userRegistrationDTO.getUserName(),
                                         system,
                                         identityToken)
+                                .chain(() -> newIp.findInvolvedPartyIdentificationType(
+                                        dbSession, NoClassification, IdentificationTypeUserName,
+                                        userRegistrationDTO.getUserName(), system, true, true, identityToken))
                                 .chain(idType -> {
                                     // Expire identification type
                                     return idType.expire(dbSession, Duration.of(2, HOURS), identityToken)
@@ -553,7 +489,10 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
                                             system,
                                             identityToken);
                                 })
-                                .chain(idUserNameType -> {
+                                            .chain(() -> newIp.findInvolvedPartyIdentificationType(
+                                                    dbSession, NoClassification, IdentificationTypeUserName,
+                                                    userRegistrationDTO.getUserName(), system, true, true, identityToken))
+                                            .chain(idUserNameType -> {
                                     // Expire username identification type
                                     return idUserNameType.expire(dbSession, Duration.of(2, HOURS), identityToken);
                                 })
@@ -611,59 +550,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     /**
-     * Creates a device involved party for the given profile service DTO.
-     * This method has been migrated to use reactive patterns.
-     *
-     * @param session           The Mutiny.Session to use for database operations
-     * @param profileServiceDTO The profile service DTO containing client information
-     * @return A Uni emitting the created or found device involved party
-     */
-    Uni<IInvolvedParty<?, ?>> createDeviceIP(Mutiny.Session session, ProfileServiceDTO<?> profileServiceDTO, ISystems<?, ?> system, UUID... identityToken) {
-        log.log(Level.FINE, "Creating device IP for web client UUID: {0}", profileServiceDTO.getWebClientUUID());
-        String webClientUUID = profileServiceDTO.getWebClientUUID().toString();
-
-        // Operate directly on the caller-provided session (this service never opens its own session/tx)
-        return (Uni) withSession(session, dbSession -> {
-            // Find device type
-            return involvedPartyService.findType(dbSession, TypeDevice.toString(), system, identityToken)
-                    .chain(deviceType -> {
-                        // Try to find existing device IP
-                        return involvedPartyService.get().builder(dbSession)
-                                .findByTypeAll(TypeDevice.toString(), webClientUUID, system, identityToken)
-                                .latestFirst()
-                                .setMaxResults(1)
-                                .get()
-                                // A fresh web-client key has no existing device IP — the builder's get() throws
-                                // NoResultException on an empty result, so recover to null to drive the create path.
-                                .onFailure(jakarta.persistence.NoResultException.class).recoverWithNull()
-                                .onItem().ifNotNull().transform(ip -> (IInvolvedParty<?, ?>) ip)
-                                .onItem().ifNull().switchTo(() -> {
-                                    // Create new device IP if not found
-                                    log.log(Level.FINE, "Device IP not found, creating new one");
-                                    Pair<String, String> deviceIDType = new Pair<>();
-                                    deviceIDType.setKey(IdentificationTypeWebClientUUID.toString())
-                                            .setValue(webClientUUID);
-
-                                    // Create involved party
-                                    return (Uni) involvedPartyService.create(dbSession, system, deviceIDType, false, identityToken)
-                                            .chain(newIp -> {
-                                                // Add involved party type
-                                                return newIp.addOrReuseInvolvedPartyType(
-                                                                dbSession, NoClassification.toString(),
-                                                                deviceType,
-                                                                webClientUUID,
-                                                                system,
-                                                                identityToken)
-                                                        .chain(() -> Uni.createFrom().item(newIp));
-                                            });
-                                });
-                    })
-                    .onFailure().invoke(error -> log.log(Level.SEVERE, "Error creating device IP: {0}", String.valueOf(error)));
-        });
-    }
-
-    /**
-     * Stateless twin of {@link #createDeviceIP(Mutiny.Session, ProfileServiceDTO, ISystems, UUID...)} —
+     * Stateless twin of {@link #createDeviceIP(Mutiny.StatelessSession, ProfileServiceDTO, ISystems, UUID...)} —
      * resolves or creates the device (guest/visitor) involved party for the web-client UUID on a
      * {@link Mutiny.StatelessSession}.
      */
@@ -702,36 +589,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     /**
-     * Updates the last visit time for an involved party.
-     * This method has been migrated to use reactive patterns.
-     *
-     * @param session       The Mutiny.Session to use for database operations
-     * @param newIp         The involved party to update
-     * @param identityToken The identity tokens for security
-     * @return A Uni emitting the updated involved party
-     */
-    Uni<IInvolvedParty<?, ?>> updateLatestVisit(Mutiny.Session session, IInvolvedParty<?, ?> newIp, ISystems<?, ?> system,
-                                                java.util.UUID... identityToken) {
-        log.log(Level.FINE, "Updating last visit time for involved party: {0}", newIp.getId());
-        String lastVisit = convertToUTCDateTime(com.entityassist.RootEntity.getNow()).format(DateTimeFormatter.ISO_DATE);
-
-        // Operate directly on the caller-provided session (this service never opens its own session/tx)
-        return (Uni) withSession(session, dbSession -> {
-            // Use addOrUpdateClassification which already returns a reactive type
-            return newIp.addOrUpdateClassification(dbSession, LastVisitTime,
-                            (String) null,
-                            lastVisit,
-                            system,
-                            identityToken)
-                    // Chain with Uni.createFrom().item(newIp) to return the involved party
-                    .chain(() -> Uni.createFrom().item(newIp))
-                    // Add error handling with onFailure().invoke()
-                    .onFailure().invoke(error -> log.log(Level.SEVERE, "Error updating last visit time: {0}", String.valueOf(error)));
-        });
-    }
-
-    /**
-     * Stateless twin of {@link #updateLatestVisit(Mutiny.Session, IInvolvedParty, ISystems, UUID...)} —
+     * Stateless twin of {@link #updateLatestVisit(Mutiny.StatelessSession, IInvolvedParty, ISystems, UUID...)} —
      * stamps the last-visit classification on a {@link Mutiny.StatelessSession}.
      */
     Uni<IInvolvedParty<?, ?>> updateLatestVisit(Mutiny.StatelessSession session, IInvolvedParty<?, ?> newIp, ISystems<?, ?> system,
@@ -750,7 +608,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     @Override
-    public Uni<Boolean> verifyUsernameExists(Mutiny.Session session, UserLoginDTO<?> userLoginDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
+    public Uni<Boolean> verifyUsernameExists(Mutiny.StatelessSession session, UserLoginDTO<?> userLoginDTO, ISystems<?, ?> system, java.util.UUID... identityToken) {
         log.log(Level.FINE, "Verifying if username exists: {0}", userLoginDTO.getUserName());
         if (Strings.isNullOrEmpty(userLoginDTO.getUserName())) {
             return Uni.createFrom().failure(new ProfileServiceException("Username cannot be empty"));
@@ -760,7 +618,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     @Override
-    public Uni<UserLoginDTO<?>> verifyPasswordForUser(Mutiny.Session session, UserLoginDTO<?> userLoginDTO, IEnterprise<?, ?> enterprise, ISystems<?, ?> system, java.util.UUID... identityToken) {
+    public Uni<UserLoginDTO<?>> verifyPasswordForUser(Mutiny.StatelessSession session, UserLoginDTO<?> userLoginDTO, IEnterprise<?, ?> enterprise, ISystems<?, ?> system, java.util.UUID... identityToken) {
         log.log(Level.FINE, "Verifying password for user: {0}", userLoginDTO.getUserName());
 
         // Validate input parameters
@@ -789,19 +647,7 @@ public class SessionLoginService implements ISessionLoginService<SessionLoginSer
     }
 
     /**
-     * Executes a reactive function on the <strong>caller-provided</strong> {@link Mutiny.Session}.
-     * <p>
-     * This service never opens its own session or transaction — top-level entry points (REST resources,
-     * event-bus consumers, the {@code UserSessionProvider}) are responsible for establishing the session
-     * via {@code SessionUtils.withActivityMaster(...)} and passing it in. This pass-through simply keeps
-     * every operation on the one session that was handed to the method.
-     */
-    private static <T> Uni<T> withSession(Mutiny.Session session, java.util.function.Function<Mutiny.Session, Uni<T>> function) {
-        return function.apply(session);
-    }
-
-    /**
-     * Stateless twin of {@link #withSession(Mutiny.Session, java.util.function.Function)} — executes the
+     * Stateless twin of {@link #withSession(Mutiny.StatelessSession, java.util.function.Function)} — executes the
      * function on the caller-provided {@link Mutiny.StatelessSession} established by
      * {@code SessionUtils.withActivityMasterStateless(...)} (or {@code withSystemAndTokenStateless}).
      */

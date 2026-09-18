@@ -42,10 +42,10 @@ public interface IUserSession<J extends IUserSession<J>>
 	/**
 	 * Gets the involved party associated with this session
 	 *
-	 * @param session The Mutiny.Session to use for database operations
+	 * @param session The Mutiny.StatelessSession to use for database operations
 	 * @return A Uni emitting the involved party
 	 */
-	Uni<IInvolvedParty<?, ?>> getInvolvedParty(org.hibernate.reactive.mutiny.Mutiny.Session session);
+	Uni<IInvolvedParty<?, ?>> getInvolvedParty(org.hibernate.reactive.mutiny.Mutiny.StatelessSession session);
 	
 /*	ISystems<?, ?> getSystem();
 	

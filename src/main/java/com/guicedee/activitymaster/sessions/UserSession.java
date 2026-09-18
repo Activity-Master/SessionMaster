@@ -142,7 +142,7 @@ public class UserSession
 	}
 	
 	@Override
-	public Uni<IInvolvedParty<?,?>> getInvolvedParty(org.hibernate.reactive.mutiny.Mutiny.Session session)
+	public Uni<IInvolvedParty<?,?>> getInvolvedParty(org.hibernate.reactive.mutiny.Mutiny.StatelessSession session)
 	{
 		if (involvedParty != null) {
 			// Create a new Uni with explicit type
