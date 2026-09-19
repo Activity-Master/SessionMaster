@@ -36,22 +36,8 @@ public interface IUserSession<J extends IUserSession<J>>
 	IUserSession<?> removeValue(String key);
 	
 	<T> T as(String key, Class<T> type);
-	
-	Uni<IUserSession<?>> setInvolvedParty(IInvolvedParty<?, ?> involvedParty);
-	
-	/**
-	 * Gets the involved party associated with this session
-	 *
-	 * @param session The Mutiny.StatelessSession to use for database operations
-	 * @return A Uni emitting the involved party
-	 */
-	Uni<IInvolvedParty<?, ?>> getInvolvedParty(org.hibernate.reactive.mutiny.Mutiny.StatelessSession session);
-	
-/*	ISystems<?, ?> getSystem();
-	
-	IUserSession<?> setSystem(ISystems<?, ?> system);
-	*/
-	Map<String, String> getValues();
+
+	Map<String, Object> getValues();
 	
 	UUID getResourceItemID();
 	

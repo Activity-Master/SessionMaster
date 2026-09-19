@@ -28,6 +28,7 @@ package com.guicedee.activitymaster.sessions;
  * See ReactivityMigrationGuide.md for more details on these rules.
  */
 
+import io.smallrye.mutiny.unchecked.Unchecked;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.type.MapType;
 import tools.jackson.databind.type.TypeFactory;
@@ -45,7 +46,6 @@ import io.vertx.core.Vertx;
 import lombok.extern.java.Log;
 import org.hibernate.reactive.mutiny.Mutiny;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -78,12 +78,12 @@ public class UserSessionService
     // ---- Stateless twins ----
 
     @Override
-    public Uni<IUserSession<?>> getSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, java.util.UUID... identityToken) {
-        return getSession(dbSession, involvedParty, new UserSession(), system, identityToken);
+    public Uni<IUserSession<?>> getUserSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, ISystems<?, ?> system, java.util.UUID... identityToken) {
+        return getUserSession(dbSession, involvedParty, new UserSession(), system, identityToken);
     }
 
     @Override
-    public Uni<IUserSession<?>> getSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken) {
+    public Uni<IUserSession<?>> getUserSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, IUserSession<?> session, ISystems<?, ?> system, java.util.UUID... identityToken) {
         if (session == null && involvedParty == null) {
             return Uni.createFrom().item(session);
         }
@@ -136,8 +136,7 @@ public class UserSessionService
                                 session.setDataID(secondary.getId());
                                 return Uni.createFrom().item(session);
                             });
-                })
-                .chain(result -> result != null ? result.setInvolvedParty(involvedParty) : Uni.createFrom().item(result));
+                });
     }
 
     private Uni<IUserSession<?>> createNewSessionResourceItem(
@@ -176,21 +175,10 @@ public class UserSessionService
     }
 
     @Override
-    public Uni<IUserSession<?>> updateCache(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken) {
-        return Uni.createFrom().item(original);
-    }
-
-    @Override
-    public Uni<Void> removeCache(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty) {
-        return Uni.createFrom().voidItem();
-    }
-
-    @Override
     public Uni<IUserSession<?>> expireSession(Mutiny.StatelessSession dbSession, IInvolvedParty<?, ?> involvedParty, IUserSession<?> original, ISystems<?, ?> system, java.util.UUID... identityToken) {
         if (original == null && involvedParty == null) {
             return Uni.createFrom().item(original);
         }
-        IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
         return resourceItemService.findByUUID(dbSession, original.getResourceItemID())
                 .chain(resourceItem -> {
                     if (resourceItem != null) {
@@ -199,8 +187,7 @@ public class UserSessionService
                     }
                     return Uni.createFrom().item(original);
                 })
-                .onFailure().invoke(error -> log.log(Level.SEVERE, "Error expiring session (stateless)", error))
-                .chain(result -> result != null ? result.setInvolvedParty(involvedParty) : Uni.createFrom().item(result));
+                .onFailure().invoke(error -> log.log(Level.SEVERE, "Error expiring session (stateless)", error));
     }
 
     @Override
@@ -208,7 +195,7 @@ public class UserSessionService
         if (system.isFake() || (session == null && involvedParty == null)) {
             return Uni.createFrom().item(session);
         }
-        return Uni.createFrom().item(() -> {
+        return Uni.createFrom().item(Unchecked.supplier(() -> {
             try {
                 String sessionString = get(DefaultObjectMapper).writeValueAsString(session);
                 return Strings.isNullOrEmpty(sessionString) ? "{}" : sessionString;
@@ -216,8 +203,7 @@ public class UserSessionService
                 log.log(Level.SEVERE, "Error serializing session", e);
                 throw new RuntimeException(e);
             }
-        }).chain(sessionString -> {
-            IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
+        })).chain(sessionString -> {
             return resourceItemService.updateResourceData(dbSession,
                                                           sessionString.getBytes(),
                                                           session.getResourceItemID()
