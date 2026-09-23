@@ -10,35 +10,23 @@ module com.guicedee.activitymaster.sessions {
 	exports com.guicedee.activitymaster.sessions.services.classifications;
 	exports com.guicedee.activitymaster.sessions.services.dto;
 	
-	requires transitive com.guicedee.guicedinjection;
 	requires org.json;
-	requires com.guicedee.persistence;
 	
 	requires org.mapstruct;
 
 	requires com.guicedee.activitymaster.profiles;
 	
-	requires cache.annotations.ri.common;
 	requires cache.annotations.ri.guice;
-	requires cache.api;
 	
 	requires java.sql;
 	requires static lombok;
 	
-	requires transitive com.guicedee.jsonrepresentation;
 
 	requires com.guicedee.activitymaster.fsdm;
-	requires com.google.guice;
 	
-	requires com.google.common;
 
-	requires com.fasterxml.jackson.annotation;
-	requires tools.jackson.databind;
-	requires tools.jackson.core;
 	//requires net.sf.uadetector.core;
 	requires transitive com.guicedee.activitymaster.fsdm.client;
-	requires com.entityassist;
-	requires org.hibernate.reactive;
 	
 	provides IMasterSystem with SessionMasterSystem;
 	provides IGuiceModule with SessionMasterBinder;
