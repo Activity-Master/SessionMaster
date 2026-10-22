@@ -117,9 +117,9 @@ public class UserSessionService
                         }
                     }
                     IResourceItem<?, ?> secondary = (IResourceItem<?, ?>) resourceItem.getSecondary();
-                    return secondary.getData(dbSession, identityToken)
+                    return dbSession.fetch(secondary).chain(loaded -> loaded.getData(dbSession, identityToken))
                             .chain(data -> {
-                                String currentSessionValue = new String(data);
+                                String currentSessionValue = new String(data, java.nio.charset.StandardCharsets.UTF_8);
                                 String sessionString = Strings.isNullOrEmpty(currentSessionValue) ? "{}" : currentSessionValue;
                                 if (!("{}".equals(sessionString))) {
                                     try {
@@ -152,7 +152,7 @@ public class UserSessionService
                 .create(dbSession,
                         JsonPacket.toString(),
                         "application/json",
-                        sessionString.getBytes(),
+                        sessionString.getBytes(java.nio.charset.StandardCharsets.UTF_8),
                         system,
                         identityToken
                 )
@@ -166,7 +166,7 @@ public class UserSessionService
                         )
                         .chain(relationshipValue -> {
                             IResourceItem<?, ?> secondary = (IResourceItem<?, ?>) relationshipValue.getSecondary();
-                            return secondary.getDataRow(dbSession, identityToken).map(data -> {
+                            return dbSession.fetch(secondary).chain(loaded -> loaded.getDataRow(dbSession, identityToken)).map(data -> {
                                 session.setResourceItemID(secondary.getId());
                                 session.setDataID(data.getId());
                                 return session;
@@ -205,9 +205,75 @@ public class UserSessionService
             }
         })).chain(sessionString -> {
             return resourceItemService.updateResourceData(dbSession,
-                                                          sessionString.getBytes(),
+                                                          sessionString.getBytes(java.nio.charset.StandardCharsets.UTF_8),
                                                           session.getResourceItemID()
-            ).replaceWith(dbSession);
-        }).map(a -> (IUserSession<?>) a);
+            ).replaceWith(session);
+        });
+    }
+
+    // The outer canonical session map contains strings. PostgreSQL merges this one string at row-update time.
+    private static final String ATOMIC_VALUE_UPDATE = """
+            UPDATE resource.resourceitemdatavalue v
+            SET resourceitemdatavalue = convert_to(jsonb_set(
+                convert_from(v.resourceitemdatavalue, 'UTF8')::jsonb,
+                ARRAY[cast(:preferenceKey as text)], to_jsonb(cast(:replacement as text)), true)::text, 'UTF8')
+            WHERE v.resourceitemdatavalueid = :dataValueId
+              AND octet_length(v.resourceitemdatavalue) <= 1048576
+              AND jsonb_typeof(convert_from(v.resourceitemdatavalue, 'UTF8')::jsonb) = 'object'
+              AND (convert_from(v.resourceitemdatavalue, 'UTF8')::jsonb ->> cast(:preferenceKey as text))
+                  IS NOT DISTINCT FROM cast(:expected as text)
+            """;
+
+    private Uni<IUserSession<?>> lockedSession(Mutiny.StatelessSession db, IInvolvedParty<?, ?> party,
+            ISystems<?, ?> system, String key, java.util.UUID... tokens) {
+        if (db == null || db.currentTransaction() == null || party == null || party.getId() == null
+                || system == null || system.isFake() || system.getEnterprise() == null
+                || system.getEnterprise().getId() == null || tokens == null || tokens.length == 0
+                || java.util.Arrays.stream(tokens).anyMatch(java.util.Objects::isNull)
+                || key == null || !key.matches("[a-z][a-z0-9._-]{0,149}"))
+            return Uni.createFrom().failure(new IllegalArgumentException("Bounded canonical session context required"));
+        if (!(party instanceof com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable<?,?,?,?> ownerAccess))
+            return Uni.createFrom().failure(new SecurityException("Secured session owner required"));
+        // Matches NE1's existing realm-appearance writer; also serializes first creation of a SessionObject.
+        return db.createNativeQuery("select 1 from pg_advisory_xact_lock(hashtextextended(:key, 0))", Integer.class)
+                .setParameter("key", "ne1-session:" + system.getEnterprise().getId() + ":" + party.getId())
+                .getSingleResult()
+                .chain(() -> ownerAccess.canWrite(db, system, tokens))
+                .invoke(allowed -> { if (!Boolean.TRUE.equals(allowed)) throw new SecurityException("Session owner write denied"); })
+                .chain(() -> getUserSession(db, party, system, tokens));
+    }
+
+    @Override
+    public Uni<String> readSessionValue(Mutiny.StatelessSession db, IInvolvedParty<?, ?> party,
+            ISystems<?, ?> system, String key, java.util.UUID... tokens) {
+        return lockedSession(db, party, system, key, tokens).map(state -> {
+            Object value = state.getValues().get(key);
+            if (value != null && (!(value instanceof String text) || text.length() > 8192))
+                throw new IllegalStateException("Invalid canonical session preference");
+            return (String) value;
+        });
+    }
+
+    @Override
+    public Uni<Void> compareAndSetSessionValue(Mutiny.StatelessSession db, IInvolvedParty<?, ?> party,
+            ISystems<?, ?> system, String key, String expected, String replacement, java.util.UUID... tokens) {
+        if (replacement == null || replacement.length() > 8192 || expected != null && expected.length() > 8192)
+            return Uni.createFrom().failure(new IllegalArgumentException("Bounded session preference required"));
+        return lockedSession(db, party, system, key, tokens)
+                .call(state -> resourceItemService.findByUUID(db, state.getResourceItemID()).chain(resource -> {
+                    if (!(resource instanceof com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable<?,?,?,?> access))
+                        return Uni.createFrom().failure(new SecurityException("Secured session resource required"));
+                    return access.canWrite(db, system, tokens)
+                            .invoke(allowed -> { if (!Boolean.TRUE.equals(allowed)) throw new SecurityException("Session resource write denied"); });
+                }))
+                .chain(state -> db.createQuery(
+                        "SELECT dv.id FROM ResourceItemData rd JOIN rd.dataValue dv WHERE rd.resource.id = :resource", java.util.UUID.class)
+                        .setParameter("resource", state.getResourceItemID()).getSingleResultOrNull())
+                .onItem().ifNull().failWith(() -> new IllegalStateException("Canonical session data unavailable"))
+                .chain(id -> db.createNativeQuery(ATOMIC_VALUE_UPDATE)
+                        .setParameter("dataValueId", id).setParameter("preferenceKey", key)
+                        .setParameter("expected", expected).setParameter("replacement", replacement).executeUpdate())
+                .invoke(rows -> { if (rows != 1) throw new IUserSessionService.ValueConflict(); })
+                .replaceWithVoid();
     }
 }

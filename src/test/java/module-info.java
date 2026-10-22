@@ -5,6 +5,12 @@ open module activity.master.sessions.tests {
     requires transitive com.guicedee.persistence;
 
     requires org.junit.jupiter.api;
+    requires java.sql;
+    requires org.postgresql.jdbc;
+    requires org.mockito;
+    requires tools.jackson.databind;
+    requires com.guicedee.client;
+    requires io.vertx.core;
 
     requires jakarta.xml.bind;
     requires jakarta.persistence;
