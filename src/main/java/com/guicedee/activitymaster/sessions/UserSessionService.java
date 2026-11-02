@@ -35,6 +35,9 @@ import tools.jackson.databind.type.TypeFactory;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.guicedee.activitymaster.fsdm.client.services.IResourceItemService;
+import com.guicedee.activitymaster.fsdm.client.services.ISecurityTokenService;
+import com.guicedee.activitymaster.fsdm.client.services.IActiveFlagService;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceItem;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
@@ -74,6 +77,12 @@ public class UserSessionService
 
     @Inject
     private Vertx vertx;
+
+    @Inject
+    private ISecurityTokenService<?> securityTokens;
+
+    @Inject
+    private IActiveFlagService<?> activeFlags;
 
     // ---- Stateless twins ----
 
@@ -148,14 +157,19 @@ public class UserSessionService
             java.util.UUID[] identityToken,
             IUserSession<?> session
     ) {
-        return resourceItemService
-                .create(dbSession,
+        if (dbSession.currentTransaction() == null
+                || !(involvedParty instanceof IWarehouseCoreTable<?,?,?,?> owner))
+            return Uni.createFrom().failure(new SecurityException("Transactional secured session owner required"));
+        return owner.canWrite(dbSession, system, identityToken)
+                .invoke(allowed -> { if (!Boolean.TRUE.equals(allowed)) throw new SecurityException("Session owner write denied"); })
+                .chain(() -> resourceItemService.create(dbSession,
                         JsonPacket.toString(),
                         "application/json",
                         sessionString.getBytes(java.nio.charset.StandardCharsets.UTF_8),
                         system,
                         identityToken
-                )
+                ))
+                .call(ri -> grantNewSessionOwner(dbSession, involvedParty, system, ri, identityToken))
                 .chain(ri -> involvedParty
                         .addResourceItem(dbSession,
                                          SessionClassifications.SessionObject.toString(),
@@ -172,6 +186,47 @@ public class UserSessionService
                                 return session;
                             });
                         }));
+    }
+
+    /** Only a direct, current organic owner grant can create this additional resource grant.
+     * Technical/group callers retain the existing default matrix; existing resources are never backfilled. */
+    private Uni<Void> grantNewSessionOwner(Mutiny.StatelessSession db, IInvolvedParty<?,?> party,
+            ISystems<?,?> system, IResourceItem<?,?> resource, java.util.UUID[] credentials) {
+        if (credentials == null || credentials.length != 1 || credentials[0] == null)
+            return Uni.createFrom().voidItem();
+        String sql = """
+                SELECT EXISTS (SELECT 1 FROM party.involvedpartysecuritytoken g
+                  JOIN security.securitytoken t ON t.securitytokenid=g.securitytokenid AND t.enterpriseid=g.enterpriseid
+                  JOIN classification.classification c ON c.classificationid=t.securitytokenclassificationid
+                    AND c.enterpriseid=t.enterpriseid
+                  WHERE g.involvedpartyid=:party AND g.enterpriseid=:enterprise
+                    AND t.securitytoken=:credential AND c.classificationname IN ('User','Identity')
+                    AND g.readallowed=1 AND g.updateallowed=1
+                """;
+        for (String row : java.util.List.of("g", "t", "c"))
+            sql += " AND " + row + ".effectivefromdate<=statement_timestamp() AND " + row + ".effectivetodate>statement_timestamp()"
+                    + " AND EXISTS (SELECT 1 FROM dbo.activeflag f WHERE f.activeflagid=" + row + ".activeflagid"
+                    + " AND f.enterpriseid=:enterprise AND f.allowaccess=1"
+                    + " AND f.effectivefromdate<=statement_timestamp() AND f.effectivetodate>statement_timestamp())";
+        return db.createNativeQuery(sql + ")", Boolean.class)
+                .setParameter("party", party.getId()).setParameter("enterprise", system.getEnterprise().getId())
+                .setParameter("credential", credentials[0].toString()).getSingleResult()
+                .chain(eligible -> {
+                    if (!Boolean.TRUE.equals(eligible)) return Uni.createFrom().voidItem();
+                    if (!(resource instanceof IWarehouseCoreTable<?,?,?,?> secured))
+                        return Uni.createFrom().failure(new SecurityException("Secured session resource required"));
+                    return securityTokens.getSecurityToken(db, credentials[0], system, credentials)
+                            .chain(token -> {
+                                if (token == null || !credentials[0].toString().equals(token.getSecurityToken()))
+                                    return Uni.createFrom().failure(new SecurityException("Session owner credential unavailable"));
+                                return activeFlags.getActiveFlag(db, system.getEnterprise(), credentials)
+                                        .chain(flag -> secured.createSecurityGrant(db, system, system.getEnterprise(), flag,
+                                                token, false, true, false, true, credentials))
+                                        .invoke(count -> { if (count == null || count != 1L)
+                                            throw new IllegalStateException("Session owner grant was not created"); })
+                                        .replaceWithVoid();
+                            });
+                });
     }
 
     @Override

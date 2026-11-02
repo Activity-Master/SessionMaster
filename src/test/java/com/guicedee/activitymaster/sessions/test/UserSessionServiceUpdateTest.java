@@ -171,6 +171,10 @@ class UserSessionServiceUpdateTest {
             service = Guice.createInjector(new AbstractModule() {
                 @Override protected void configure() {
                     bind(new TypeLiteral<IResourceItemService<?>>() {}).toInstance(items);
+                    bind(new TypeLiteral<com.guicedee.activitymaster.fsdm.client.services.ISecurityTokenService<?>>() {})
+                            .toInstance(mock(com.guicedee.activitymaster.fsdm.client.services.ISecurityTokenService.class));
+                    bind(new TypeLiteral<com.guicedee.activitymaster.fsdm.client.services.IActiveFlagService<?>>() {})
+                            .toInstance(mock(com.guicedee.activitymaster.fsdm.client.services.IActiveFlagService.class));
                     bind(Vertx.class).toInstance(mock(Vertx.class));
                 }
             }).getInstance(UserSessionService.class);
